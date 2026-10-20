@@ -3,12 +3,10 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import useSWR from "swr";
-import { useQrCheckout } from "@/components/petugas/finder";
 import { PendingPill, Screen } from "@/components/petugas/shell";
 import { useSession } from "@/components/petugas/session";
 import { VehicleRow } from "@/components/petugas/vehicle-row";
-import { ChevronDown, Exit, Plus, Scan, Search } from "@/components/icons";
-import { ErrorNote } from "@/components/ui";
+import { ChevronDown, Exit, Plus, Search } from "@/components/icons";
 import { fetcher } from "@/lib/api/client";
 import { initial, normalizePlate } from "@/lib/format";
 import { cacheGet, cachePut } from "@/lib/offline/db";
@@ -24,7 +22,6 @@ export default function Beranda() {
   const { user, assignment, switchPost } = useSession();
   const active = assignment.active!;
   const { items, offline } = useActiveList(active.post.id);
-  const qr = useQrCheckout(items);
   const [q, setQ] = useState("");
   const [picker, setPicker] = useState(false);
 
@@ -91,28 +88,21 @@ export default function Beranda() {
             <span className="text-[13px]">Kendaraan datang</span>
           </span>
         </Link>
-        <button onClick={qr.open} className="tap flex min-h-[120px] flex-col justify-between rounded-[18px] bg-ink p-4 text-left text-on-ink">
+        <Link href="/aktif" className="tap flex min-h-[120px] flex-col justify-between rounded-[18px] bg-ink p-4 text-on-ink">
           <Exit size={30} />
           <span className="flex flex-col">
             <strong className="font-display text-[22px]">Check Out</strong>
             <span className="text-[13px] text-[#B4B8B3]">Kendaraan diminta</span>
           </span>
-        </button>
+        </Link>
       </div>
 
-      <div className="flex gap-2">
-        <label className="flex min-h-[52px] flex-1 items-center gap-2.5 rounded-xl border-[1.5px] border-field bg-surface px-3.5">
-          <Search size={18} className="text-muted" />
-          <span className="sr-only">Cari plat</span>
-          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Cari plat nomor atau slot"
-            className="min-w-0 flex-1 bg-transparent outline-none" />
-        </label>
-        <button onClick={qr.open} aria-label="Scan QR tiket cek list"
-          className="flex size-[52px] items-center justify-center rounded-xl bg-ink text-accent">
-          <Scan size={22} />
-        </button>
-      </div>
-      <ErrorNote>{qr.error}</ErrorNote>
+      <label className="flex min-h-[52px] items-center gap-2.5 rounded-xl border-[1.5px] border-field bg-surface px-3.5">
+        <Search size={18} className="text-muted" />
+        <span className="sr-only">Cari plat</span>
+        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Cari plat nomor"
+          className="min-w-0 flex-1 bg-transparent outline-none" />
+      </label>
       {offline && (
         <p className="rounded-xl bg-warning-bg px-3.5 py-2.5 text-[13px] text-warning">
           Sinyal tidak ada. Menampilkan data terakhir; check in tetap bisa, data dikirim otomatis.
@@ -128,7 +118,6 @@ export default function Beranda() {
         {!list.length && <p className="py-8 text-center text-[15px] text-muted">{q ? "Tidak ada kendaraan yang cocok." : "Belum ada kendaraan parkir."}</p>}
       </section>
 
-      {qr.scanner}
       {picker && (
         <div role="dialog" aria-modal="true" aria-label="Pilih pos" className="fixed inset-0 z-40 flex items-end bg-ink/50" onClick={() => setPicker(false)}>
           <div className="safe-bottom mx-auto w-full max-w-[480px] rounded-t-2xl bg-surface p-5" onClick={(e) => e.stopPropagation()}>

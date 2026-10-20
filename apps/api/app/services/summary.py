@@ -10,12 +10,22 @@ def build_summary(
     checked: Mapping[str, bool],
     inside: Mapping[str, tuple[bool, str | None]],
     notes: str | None,
+    conditions: Mapping[str, str] | None = None,
 ) -> str:
+    """conditions = item_id → id kondisi (mis. 'lecet'); kalau ada, baris menyebut kondisinya."""
     labels = {it.id: it.label for it in config.exterior_items()}
+    cond_label = {c.id: c.label for c in config.conditions}
     lines = [config.summary_title, f"Nomor polisi: {plate}"]
     for line in config.summary_lines:
-        missing = [labels[i].lower() for i in line.item_ids if not checked.get(i, False)]
-        lines.append(f"{line.label}: " + (f"Perlu dicek ({', '.join(missing)})" if missing else "Baik"))
+        missing = [i for i in line.item_ids if not checked.get(i, False)]
+        if not missing:
+            lines.append(f"{line.label}: Baik")
+            continue
+        groups: dict[str, list[str]] = {}
+        for i in missing:
+            key = cond_label.get((conditions or {}).get(i, ""), "Perlu dicek")
+            groups.setdefault(key, []).append(labels[i].lower())
+        lines.append(f"{line.label}: " + ", ".join(f"{k} ({', '.join(v)})" for k, v in groups.items()))
 
     present = []
     for it in config.inside_items():

@@ -6,6 +6,7 @@ from tests.conftest import (
     ALL_ITEMS,
     checkin_payload,
     checkout_payload,
+    item_photos,
     login_admin,
     login_petugas,
     photos,
@@ -58,23 +59,57 @@ def test_satu_plat_parked_per_lokasi(world):
                      ).status_code == 201
 
 
-def test_foto_4_sisi_wajib(world):
+def _version(world, db, **changes) -> int:
+    cfg = {**STANDAR_MOBIL.model_dump(mode="json"), **changes}
+    v = TemplateVersion(template_id=world.template.id, version=len(world.template.versions) + 1, config=cfg)
+    db.add(v)
+    db.commit()
+    return v.id
+
+
+def test_foto_4_sisi_wajib_kalau_template_mewajibkan(world, db):
+    vid = _version(world, db, photo_mode="required_4_sides")
     c = login_petugas(world.budi)
-    r = c.post("/api/transactions", json=checkin_payload(world, photos=photos("depan", "kiri")))
+    body = checkin_payload(world, template_version_id=vid, photos=photos("depan", "kiri"))
+    r = c.post("/api/transactions", json=body)
     assert r.status_code == 422
     assert "belakang" in r.json()["detail"]
 
 
-def test_item_tidak_diceklis_wajib_foto_dan_catatan(world):
+def test_template_standar_tidak_wajib_foto_sisi(world):
     c = login_petugas(world.budi)
-    checks = [{"item_id": i, "checked": i != "bamper_belakang"} for i in ALL_ITEMS]
-    assert c.post("/api/transactions", json=checkin_payload(world, checks=checks)).status_code == 422
+    body = checkin_payload(world, inside_items=[], photos=[])
+    assert c.post("/api/transactions", json=body).status_code == 201
 
-    checks[-5] = {"item_id": "bamper_belakang", "checked": False, "note": "lecet kiri"}
-    ph = photos() + [{"client_id": str(uuid.uuid4()), "side": "detail", "item_id": "bamper_belakang"}]
-    r = c.post("/api/transactions", json=checkin_payload(world, checks=checks, photos=ph))
-    assert r.status_code == 201, r.text
-    assert "Bodi belakang: Perlu dicek (bamper belakang)" in r.json()["summary_text"]
+
+def test_kondisi_wajib_untuk_semua_bagian(world):
+    c = login_petugas(world.budi)
+    checks = [{"item_id": i, "condition": "mulus"} for i in ALL_ITEMS if i != "kap_mesin"]
+    r = c.post("/api/transactions", json=checkin_payload(world, checks=checks))
+    assert r.status_code == 422 and "Kap mesin" in r.json()["detail"]
+    bad = [{"item_id": i, "condition": "hancur"} for i in ALL_ITEMS]
+    assert c.post("/api/transactions", json=checkin_payload(world, checks=bad)).status_code == 422
+
+
+def test_kondisi_penyok_lecet_tersimpan_dan_masuk_ringkasan(world):
+    c = login_petugas(world.budi)
+    cond = {"bamper_depan": "lecet", "kap_mesin": "penyok"}
+    checks = [{"item_id": i, "condition": cond.get(i, "mulus")} for i in ALL_ITEMS]
+    tx = c.post("/api/transactions", json=checkin_payload(world, checks=checks)).json()
+    by_id = {ch["item_id"]: ch for ch in tx["checks"]}
+    assert by_id["bamper_depan"]["condition"] == "lecet" and by_id["bamper_depan"]["checked"] is False
+    assert by_id["interior"]["condition"] == "mulus" and by_id["interior"]["checked"] is True
+    assert "Bodi depan: Lecet (bamper depan), Penyok (kap mesin)" in tx["summary_text"]
+    assert tx["has_issue"] is True
+
+
+def test_barang_di_dalam_yang_dicentang_wajib_foto(world):
+    c = login_petugas(world.budi)
+    body = checkin_payload(world, photos=item_photos("etoll"))
+    r = c.post("/api/transactions", json=body)
+    assert r.status_code == 422 and "HP" in r.json()["detail"]
+    body["photos"] = item_photos("etoll", "hp")
+    assert c.post("/api/transactions", json=body).status_code == 201
 
 
 def test_tiket_cek_list_dari_hp_dipakai_kalau_valid(world):
@@ -128,9 +163,10 @@ def test_checkout_tanpa_kerusakan_released(world):
     assert d["status"] == "released" and d["checkout_at"] and d["released_at"]
 
 
-def test_checkout_foto_keluar_wajib(world):
+def test_checkout_foto_keluar_wajib_kalau_template_mewajibkan(world, db):
+    vid = _version(world, db, photo_mode="required_4_sides")
     c = login_petugas(world.budi)
-    tx = c.post("/api/transactions", json=checkin_payload(world)).json()
+    tx = c.post("/api/transactions", json=checkin_payload(world, template_version_id=vid)).json()
     r = c.post(f"/api/transactions/{tx['id']}/checkout", json=checkout_payload(photos=photos("depan")))
     assert r.status_code == 422
 

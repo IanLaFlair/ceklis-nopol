@@ -15,12 +15,28 @@ class TemplateItem(BaseModel):
     requires_photo_if_unchecked: bool = False
     # Untuk barang di dalam: "DLL" bisa diisi teks bebas
     free_text: bool = False
+    # Untuk barang di dalam: kalau dicentang (ada di kendaraan) wajib difoto
+    requires_photo_if_present: bool = False
 
 
 class TemplateGroup(BaseModel):
     id: str = Field(pattern=r"^[a-z0-9_]{1,64}$")
     title: str = Field(min_length=1, max_length=120)
     items: list[TemplateItem]
+
+
+class ConditionOption(BaseModel):
+    """Pilihan kondisi per bagian luar, mis. Mulus / Penyok / Lecet. `ok` = dihitung baik."""
+    id: str = Field(pattern=r"^[a-z0-9_]{1,32}$")
+    label: str = Field(min_length=1, max_length=40)
+    ok: bool = False
+
+
+DEFAULT_CONDITIONS = [
+    ConditionOption(id="mulus", label="Mulus", ok=True),
+    ConditionOption(id="penyok", label="Penyok"),
+    ConditionOption(id="lecet", label="Lecet"),
+]
 
 
 class SummaryLine(BaseModel):
@@ -32,6 +48,8 @@ class TemplateConfig(BaseModel):
     photo_mode: PhotoMode = "required_4_sides"
     required_sides: list[Side] = Field(default_factory=lambda: list(ALL_SIDES))
     groups: list[TemplateGroup]
+    # Kosong = mode lama (centang baik / tidak). Terisi = tiap bagian luar wajib dipilih salah satu kondisi.
+    conditions: list[ConditionOption] = Field(default_factory=list)
     summary_title: str = "CHECKLIST VALET"
     summary_lines: list[SummaryLine] = Field(default_factory=list)
 
@@ -43,6 +61,11 @@ class TemplateConfig(BaseModel):
                 if it.id in seen:
                     raise ValueError(f"id item duplikat: {it.id}")
                 seen.add(it.id)
+        cond_ids = [c.id for c in self.conditions]
+        if len(cond_ids) != len(set(cond_ids)):
+            raise ValueError("id kondisi duplikat")
+        if self.conditions and not any(c.ok for c in self.conditions):
+            raise ValueError("minimal satu kondisi harus dihitung baik (mis. Mulus)")
         exterior = {it.id for it in self.exterior_items()}
         for line in self.summary_lines:
             missing = [i for i in line.item_ids if i not in exterior]
@@ -62,16 +85,21 @@ class TemplateConfig(BaseModel):
     def sides_required(self) -> list[str]:
         return list(self.required_sides) if self.photo_mode == "required_4_sides" else []
 
+    def condition(self, cid: str | None) -> ConditionOption | None:
+        return next((c for c in self.conditions if c.id == cid), None)
+
     def item_photo_required(self, item: TemplateItem) -> bool:
         return self.photo_mode != "off" and item.requires_photo_if_unchecked
 
 
-def _items(*pairs: tuple[str, str], photo: bool = True) -> list[TemplateItem]:
+def _items(*pairs: tuple[str, str], photo: bool = False) -> list[TemplateItem]:
     return [TemplateItem(id=i, label=label, requires_photo_if_unchecked=photo) for i, label in pairs]
 
 
 STANDAR_MOBIL = TemplateConfig(
-    photo_mode="required_4_sides",
+    # Alur ringkas (permintaan klien 20 Okt 2026): tanpa foto 4 sisi; tiap bagian pilih Mulus/Penyok/Lecet
+    photo_mode="off",
+    conditions=DEFAULT_CONDITIONS,
     groups=[
         TemplateGroup(id="tampak_depan", title="Tampak depan", items=_items(
             ("lampu_depan_kanan", "Lampu depan kanan"), ("lampu_depan_kiri", "Lampu depan kiri"),
@@ -90,11 +118,11 @@ STANDAR_MOBIL = TemplateConfig(
             ("interior", "Interior"), ("aksesori", "Aksesori kendaraan"),
         )),
         TemplateGroup(id="bagian_dalam", title="Bagian dalam", items=[
-            TemplateItem(id="etoll", label="Kartu e-Toll", kind="inside_item"),
-            TemplateItem(id="uang", label="Uang", kind="inside_item"),
-            TemplateItem(id="laptop", label="Laptop", kind="inside_item"),
-            TemplateItem(id="hp", label="HP", kind="inside_item"),
-            TemplateItem(id="dll", label="DLL", kind="inside_item", free_text=True),
+            TemplateItem(id="etoll", label="Kartu e-Toll", kind="inside_item", requires_photo_if_present=True),
+            TemplateItem(id="uang", label="Uang", kind="inside_item", requires_photo_if_present=True),
+            TemplateItem(id="laptop", label="Laptop", kind="inside_item", requires_photo_if_present=True),
+            TemplateItem(id="hp", label="HP", kind="inside_item", requires_photo_if_present=True),
+            TemplateItem(id="dll", label="DLL", kind="inside_item", free_text=True, requires_photo_if_present=True),
         ]),
     ],
     summary_lines=[

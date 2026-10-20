@@ -18,11 +18,17 @@ from app.services.template_config import STANDAR_MOBIL
 def seed_base(db) -> ChecklistTemplate:
     tpl = db.scalar(select(ChecklistTemplate).where(ChecklistTemplate.name == "Standar Mobil",
                                                     ChecklistTemplate.client_id.is_(None)))
+    config = STANDAR_MOBIL.model_dump(mode="json")
     if not tpl:
         tpl = ChecklistTemplate(name="Standar Mobil", client_id=None)
-        tpl.versions.append(TemplateVersion(version=1, config=STANDAR_MOBIL.model_dump(mode="json")))
+        tpl.versions.append(TemplateVersion(version=1, config=config))
         db.add(tpl)
         print("+ template Standar Mobil")
+    elif tpl.latest and tpl.latest.config != config:
+        # Template default ikut kode: perubahan = versi baru, transaksi lama tetap pakai snapshot versinya
+        version = tpl.latest.version + 1
+        tpl.versions.append(TemplateVersion(version=version, config=config))
+        print(f"+ template Standar Mobil v{version}")
     email = os.environ.get("SEED_ADMIN_EMAIL", "admin@ceklis.local").lower()
     if not db.scalar(select(User).where(User.role == "super_admin")):
         password = os.environ.get("SEED_ADMIN_PASSWORD", "ceklis-admin")

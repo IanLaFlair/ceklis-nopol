@@ -17,11 +17,22 @@ export interface SummaryRow {
   ok: boolean;
 }
 
-export function summaryRows(config: TemplateConfig, checked: Record<string, boolean>): SummaryRow[] {
+export function summaryRows(
+  config: TemplateConfig,
+  checked: Record<string, boolean>,
+  conditions: Record<string, string | null | undefined> = {},
+): SummaryRow[] {
   const labels = Object.fromEntries(exteriorItems(config).map((i) => [i.id, i.label]));
+  const condLabel = Object.fromEntries((config.conditions ?? []).map((c) => [c.id, c.label]));
   return config.summary_lines.map((line) => {
-    const missing = line.item_ids.filter((id) => !checked[id]).map((id) => (labels[id] ?? id).toLowerCase());
-    return { label: line.label, ok: missing.length === 0, value: missing.length ? `Perlu dicek (${missing.join(", ")})` : "Baik" };
+    const missing = line.item_ids.filter((id) => !checked[id]);
+    if (!missing.length) return { label: line.label, ok: true, value: "Baik" };
+    const groups = new Map<string, string[]>();
+    for (const id of missing) {
+      const key = condLabel[conditions[id] ?? ""] ?? "Perlu dicek";
+      groups.set(key, [...(groups.get(key) ?? []), (labels[id] ?? id).toLowerCase()]);
+    }
+    return { label: line.label, ok: false, value: [...groups].map(([k, v]) => `${k} (${v.join(", ")})`).join(", ") };
   });
 }
 
@@ -41,11 +52,12 @@ export function buildSummary(
   checked: Record<string, boolean>,
   inside: InsideState,
   notes: string | null | undefined,
+  conditions: Record<string, string | null | undefined> = {},
 ): string {
   return [
     config.summary_title,
     `Nomor polisi: ${plate}`,
-    ...summaryRows(config, checked).map((r) => `${r.label}: ${r.value}`),
+    ...summaryRows(config, checked, conditions).map((r) => `${r.label}: ${r.value}`),
     `Barang: ${insideList(config, inside)}`,
     `Catatan: ${(notes ?? "").trim() || "-"}`,
   ].join("\n");

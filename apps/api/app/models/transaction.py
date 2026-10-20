@@ -98,6 +98,7 @@ class TransactionCheck(Base):
     label_snapshot: Mapped[str] = mapped_column(String(120))
     group_snapshot: Mapped[str] = mapped_column(String(120))
     checked: Mapped[bool] = mapped_column(Boolean)
+    condition: Mapped[str | None] = mapped_column(String(32))
     note: Mapped[str | None] = mapped_column(Text)
     position: Mapped[int] = mapped_column(default=0)
 

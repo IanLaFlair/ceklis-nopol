@@ -126,6 +126,10 @@ def photos(*sides: str) -> list[dict]:
     return [{"client_id": str(uuid.uuid4()), "side": s} for s in (sides or ("depan", "belakang", "kiri", "kanan"))]
 
 
+def item_photos(*item_ids: str) -> list[dict]:
+    return [{"client_id": str(uuid.uuid4()), "side": "detail", "item_id": i} for i in item_ids]
+
+
 def checkin_payload(world: World, plate: str = "B 1234 ABC", **over) -> dict:
     body = {
         "client_id": str(uuid.uuid4()),
@@ -137,9 +141,9 @@ def checkin_payload(world: World, plate: str = "B 1234 ABC", **over) -> dict:
         "make_model": "Toyota Fortuner",
         "slot": "B2-14",
         "key_tag": "K-027",
-        "checks": [{"item_id": i, "checked": True} for i in ALL_ITEMS],
+        "checks": [{"item_id": i, "condition": "mulus"} for i in ALL_ITEMS],
         "inside_items": [{"item_id": "etoll", "present": True}, {"item_id": "hp", "present": True}],
-        "photos": photos(),
+        "photos": photos() + item_photos("etoll", "hp"),
     }
     body.update(over)
     return body

@@ -57,3 +57,9 @@ def test_template_menolak_ringkasan_ke_item_yang_tidak_ada():
             **STANDAR_MOBIL.model_dump(),
             "summary_lines": [{"label": "X", "item_ids": ["tidak_ada"]}],
         })
+
+
+def test_kondisi_disebut_di_ringkasan():
+    checked = {**ALL, "bamper_depan": False, "kap_mesin": False}
+    text = build_summary(STANDAR_MOBIL, "B 1 A", checked, {}, None, {"bamper_depan": "lecet", "kap_mesin": "lecet"})
+    assert "Bodi depan: Lecet (bamper depan, kap mesin)" in text

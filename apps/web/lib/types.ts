@@ -22,6 +22,15 @@ export interface TemplateItem {
   kind: "exterior" | "inside_item";
   requires_photo_if_unchecked: boolean;
   free_text: boolean;
+  /** Barang di dalam: kalau dicentang wajib difoto */
+  requires_photo_if_present?: boolean;
+}
+
+export interface ConditionOption {
+  id: string;
+  label: string;
+  /** dihitung baik (mis. Mulus) */
+  ok: boolean;
 }
 
 export interface TemplateGroup {
@@ -39,6 +48,8 @@ export interface TemplateConfig {
   photo_mode: PhotoMode;
   required_sides: Exclude<Side, "detail">[];
   groups: TemplateGroup[];
+  /** Kosong = mode centang lama. Terisi = tiap bagian luar wajib dipilih kondisinya. */
+  conditions?: ConditionOption[];
   summary_title: string;
   summary_lines: SummaryLine[];
 }
@@ -94,6 +105,7 @@ export interface TxCheck {
   label: string;
   group: string;
   checked: boolean;
+  condition?: string | null;
   note: string | null;
 }
 

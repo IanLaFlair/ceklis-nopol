@@ -9,7 +9,9 @@ Side = Literal["depan", "belakang", "kiri", "kanan", "detail"]
 
 class CheckIn(BaseModel):
     item_id: str
-    checked: bool
+    checked: bool = False
+    # Id kondisi dari template (mis. mulus/penyok/lecet). Kalau diisi, `checked` dihitung dari kondisi.
+    condition: str | None = None
     note: str | None = None
 
 

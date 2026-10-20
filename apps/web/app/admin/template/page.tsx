@@ -271,13 +271,20 @@ function Editor({ id }: { id: number }) {
                     <label className="flex min-h-10 items-center gap-2 text-[13px] text-muted">
                       <input type="checkbox" checked={it.requires_photo_if_unchecked}
                         onChange={(e) => setItem(gi, ii, { requires_photo_if_unchecked: e.target.checked })} className="size-[18px] accent-ink" />
-                      Wajib foto kalau tidak diceklis
+                      Wajib foto kalau penyok / lecet
                     </label>
                   ) : (
-                    <label className="flex min-h-10 items-center gap-2 text-[13px] text-muted">
-                      <input type="checkbox" checked={it.free_text} onChange={(e) => setItem(gi, ii, { free_text: e.target.checked })} className="size-[18px] accent-ink" />
-                      Isi teks bebas
-                    </label>
+                    <>
+                      <label className="flex min-h-10 items-center gap-2 text-[13px] text-muted">
+                        <input type="checkbox" checked={!!it.requires_photo_if_present}
+                          onChange={(e) => setItem(gi, ii, { requires_photo_if_present: e.target.checked })} className="size-[18px] accent-ink" />
+                        Wajib foto kalau ada
+                      </label>
+                      <label className="flex min-h-10 items-center gap-2 text-[13px] text-muted">
+                        <input type="checkbox" checked={it.free_text} onChange={(e) => setItem(gi, ii, { free_text: e.target.checked })} className="size-[18px] accent-ink" />
+                        Isi teks bebas
+                      </label>
+                    </>
                   )}
                   <OrderButtons label={it.label}
                     onUp={() => setGroups((gs) => gs.map((x, n) => (n === gi ? { ...x, items: move(x.items, ii, -1) } : x)))}

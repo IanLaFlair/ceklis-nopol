@@ -53,7 +53,7 @@ def tx_detail(tx: Transaction) -> dict:
         "template_version_id": tx.template_version_id, "template": tx.template_snapshot,
         "checks": [{
             "phase": c.phase, "item_id": c.item_id, "label": c.label_snapshot, "group": c.group_snapshot,
-            "checked": c.checked, "note": c.note,
+            "checked": c.checked, "condition": c.condition, "note": c.note,
         } for c in tx.checks],
         "inside_items": [{
             "phase": i.phase, "item_id": i.item_id, "label": i.label, "present": i.present,

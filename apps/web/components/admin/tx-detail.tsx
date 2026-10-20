@@ -25,6 +25,7 @@ export function TxDetailView({ id }: { id: number }) {
   if (!tx) return <div className="flex justify-center p-10 text-muted"><Spinner /></div>;
 
   const inChecks = tx.checks.filter((c) => c.phase === "in");
+  const condLabel = (id?: string | null) => tx.template.conditions?.find((o) => o.id === id)?.label;
   const outChecks = new Map(tx.checks.filter((c) => c.phase === "out").map((c) => [c.item_id, c]));
   const insideIn = tx.inside_items.filter((i) => i.phase === "in" && i.present);
   const insideOut = new Map(tx.inside_items.filter((i) => i.phase === "out").map((i) => [i.item_id, i]));
@@ -109,11 +110,11 @@ export function TxDetailView({ id }: { id: number }) {
                       <span className="block text-xs text-muted">{c.group}</span>
                     </td>
                     <td className="px-3 py-2.5">
-                      <Mark ok={c.checked} />
+                      <Mark ok={c.checked} label={condLabel(c.condition)} />
                       {c.note && <span className="mt-1 block text-xs text-muted">{c.note}</span>}
                     </td>
                     <td className="px-[18px] py-2.5">
-                      {out ? <Mark ok={out.checked} /> : <span className="text-muted">—</span>}
+                      {out ? <Mark ok={out.checked} label={condLabel(out.condition)} /> : <span className="text-muted">—</span>}
                       {out?.note && <span className="mt-1 block text-xs text-muted">{out.note}</span>}
                     </td>
                   </tr>
@@ -157,11 +158,11 @@ export function TxDetailView({ id }: { id: number }) {
   );
 }
 
-function Mark({ ok }: { ok: boolean }) {
+function Mark({ ok, label }: { ok: boolean; label?: string }) {
   return ok ? (
-    <span className="inline-flex rounded-full bg-success-bg px-2 py-0.5 text-xs font-semibold text-success">Baik</span>
+    <span className="inline-flex rounded-full bg-success-bg px-2 py-0.5 text-xs font-semibold text-success">{label ?? "Baik"}</span>
   ) : (
-    <span className="inline-flex rounded-full bg-danger-bg px-2 py-0.5 text-xs font-semibold text-danger-ink">Perlu dicek</span>
+    <span className="inline-flex rounded-full bg-danger-bg px-2 py-0.5 text-xs font-semibold text-danger-ink">{label ?? "Perlu dicek"}</span>
   );
 }
 

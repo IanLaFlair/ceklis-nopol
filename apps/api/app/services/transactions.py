@@ -101,7 +101,23 @@ def _checks_map(config: TemplateConfig, checks: list[CheckIn]) -> dict[str, Chec
     unknown = [c.item_id for c in checks if c.item_id not in exterior]
     if unknown:
         raise ServiceError(422, f"Item checklist tidak dikenal: {', '.join(unknown)}")
-    return {c.item_id: c for c in checks}
+    by_id = {c.item_id: c for c in checks}
+    if config.conditions:
+        for c in by_id.values():
+            if c.condition is not None:
+                opt = config.condition(c.condition)
+                if not opt:
+                    raise ServiceError(422, f"Kondisi tidak dikenal: {c.condition}")
+                c.checked = opt.ok
+    return by_id
+
+
+def _require_conditions(config: TemplateConfig, by_id: dict[str, CheckIn]) -> None:
+    if not config.conditions:
+        return
+    missing = [it.label for it in config.exterior_items() if not (by_id.get(it.id) and by_id[it.id].condition)]
+    if missing:
+        raise ServiceError(422, f"Pilih kondisi untuk semua bagian: {', '.join(missing)}")
 
 
 def _inside_map(config: TemplateConfig, items: list[InsideIn]) -> dict[str, InsideIn]:
@@ -118,7 +134,8 @@ def _store_checks(tx: Transaction, config: TemplateConfig, phase: str, by_id: di
         c = by_id.get(it.id)
         tx.checks.append(TransactionCheck(
             phase=phase, item_id=it.id, label_snapshot=it.label, group_snapshot=groups[it.id],
-            checked=bool(c and c.checked), note=(c.note or "").strip() or None if c else None, position=pos,
+            checked=bool(c and c.checked), condition=c.condition if c else None,
+            note=(c.note or "").strip() or None if c else None, position=pos,
         ))
 
 
@@ -151,16 +168,24 @@ def create_checkin(db: Session, user: User, data: CheckinCreate, device: str) ->
     inside = _inside_map(config, data.inside_items)
 
     _require_sides(config, data.photos, "check in")
+    _require_conditions(config, checks)
     photo_items = {p.item_id for p in data.photos if p.item_id}
     problems = []
     for it in config.exterior_items():
         c = checks.get(it.id)
         if (c and c.checked) or not config.item_photo_required(it):
             continue
-        if it.id not in photo_items or not (c and (c.note or "").strip()):
+        # Mode kondisi (Mulus/Penyok/Lecet): kondisinya sudah jadi keterangan, catatan tidak wajib
+        has_note = bool(config.conditions) or bool(c and (c.note or "").strip())
+        if it.id not in photo_items or not has_note:
             problems.append(it.label)
     if problems:
         raise ServiceError(422, f"Item tidak diceklis wajib foto close-up + catatan: {', '.join(problems)}")
+    no_photo = [it.label for it in config.inside_items()
+                if it.requires_photo_if_present and inside.get(it.id) and inside[it.id].present
+                and it.id not in photo_items]
+    if no_photo:
+        raise ServiceError(422, f"Barang di dalam wajib difoto: {', '.join(no_photo)}")
 
     plate = display_plate(data.plate)
     checkin_at = _clamp_time(data.checkin_at)
@@ -180,6 +205,7 @@ def create_checkin(db: Session, user: User, data: CheckinCreate, device: str) ->
         summary_text=build_summary(
             config, plate, {k: v.checked for k, v in checks.items()},
             {k: (v.present, v.extra_text) for k, v in inside.items()}, data.notes,
+            {k: v.condition for k, v in checks.items() if v.condition},
         ),
     )
     _store_checks(tx, config, "in", checks)

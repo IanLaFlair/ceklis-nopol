@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Screen } from "@/components/petugas/shell";
 import { useSession } from "@/components/petugas/session";
-import { carLine } from "@/components/petugas/vehicle-row";
 import { ArrowRight, Search } from "@/components/icons";
 import { Badge, chip, Plate } from "@/components/ui";
 import { clock, duration, minutesSince, normalizePlate } from "@/lib/format";
@@ -74,13 +73,13 @@ export default function AktifPage() {
           <div key={v.client_id} className="flex flex-col gap-3 rounded-2xl border border-line bg-surface p-3.5">
             <div className="flex items-center gap-3">
               <Plate size="md">{v.plate}</Plate>
-              <span className="min-w-0 flex-1 truncate text-sm font-medium">{carLine(v)}</span>
+              <span className="min-w-0 flex-1" />
               <span className={`shrink-0 rounded-full px-2 py-[3px] text-xs font-semibold ${mins > 180 ? "bg-danger-bg text-danger-ink" : "bg-paper-2 text-muted"}`}>
                 {duration(mins, true)}
               </span>
             </div>
-            <div className="grid grid-cols-3 gap-2 text-xs">
-              {[["Slot", v.slot ?? "-", true], ["Kunci", v.key_tag ?? "-", true], ["Masuk", clock(v.checkin_at), false]].map(([k, val, mono]) => (
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              {[["Masuk", clock(v.checkin_at), false], ["Oleh", v.checkin_by?.name ?? "-", false]].map(([k, val, mono]) => (
                 <span key={k as string} className="flex flex-col">
                   <span className="text-muted">{k}</span>
                   <strong className={`text-sm ${mono ? "font-mono" : ""}`}>{val}</strong>
@@ -94,11 +93,11 @@ export default function AktifPage() {
             </div>}
             {(v.notes || v.has_issue) && (
               <span className="rounded-lg bg-danger-bg px-2.5 py-1.5 text-xs text-[#7A2F06]">
-                {v.notes || "Ada bagian yang perlu dicek saat masuk"}
+                {v.notes || "Ada bagian penyok / lecet saat masuk"}
               </span>
             )}
             <Link href={`/checkout/${v.client_id}`} className="tap flex min-h-[46px] items-center justify-center gap-2 rounded-xl bg-ink text-[15px] font-semibold text-on-ink">
-              {v.status === "parked" ? "Check Out" : "Lihat status"}<ArrowRight size={16} stroke={2.2} />
+              {v.status === "parked" ? "Check Out" : "Lihat detail"}<ArrowRight size={16} stroke={2.2} />
             </Link>
           </div>
         );

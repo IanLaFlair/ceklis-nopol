@@ -10,6 +10,7 @@ const STANDAR: TemplateConfig = {
   photo_mode: "required_4_sides",
   required_sides: ["depan", "belakang", "kiri", "kanan"],
   summary_title: "CHECKLIST VALET",
+  conditions: [{ id: "mulus", label: "Mulus", ok: true }, { id: "penyok", label: "Penyok", ok: false }, { id: "lecet", label: "Lecet", ok: false }],
   groups: [
     { id: "tampak_depan", title: "Tampak depan", items: [item("lampu_depan_kanan", "Lampu depan kanan"), item("lampu_depan_kiri", "Lampu depan kiri"), item("bamper_depan", "Bamper depan"), item("kap_mesin", "Kap mesin")] },
     { id: "tampak_samping", title: "Tampak samping", items: [item("pintu_depan_kanan", "Pintu depan kanan"), item("pintu_belakang_kanan", "Pintu belakang kanan"), item("pintu_depan_kiri", "Pintu depan kiri"), item("pintu_belakang_kiri", "Pintu belakang kiri")] },
@@ -47,6 +48,11 @@ describe("buildSummary (PRD §4.5)", () => {
     expect(text).toContain("Bodi depan: Perlu dicek (bamper depan, kap mesin)");
     expect(text).toContain("Barang: Tidak ada");
     expect(text.endsWith("Catatan: lecet kecil")).toBe(true);
+  });
+
+  it("kondisi disebut kalau ada (sama dengan versi Python)", () => {
+    const text = buildSummary(STANDAR, "B 1 A", { ...ALL, bamper_depan: false, kap_mesin: false }, {}, null, { bamper_depan: "lecet", kap_mesin: "penyok" });
+    expect(text).toContain("Bodi depan: Lecet (bamper depan), Penyok (kap mesin)");
   });
 
   it("DLL dengan teks bebas", () => {
