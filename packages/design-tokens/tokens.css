@@ -1,0 +1,31 @@
+/* Token Ceklis untuk Tailwind v4 (@theme). Nilai sama dengan tokens.ts. */
+@theme {
+  --color-ink: #0E100F;
+  --color-ink-2: #1A1D1B;
+  --color-ink-3: #2A2E2B;
+  --color-ink-line: #343935;
+  --color-paper: #F2F2EE;
+  --color-paper-2: #F7F7F3;
+  --color-surface: #FFFFFF;
+  --color-line: #DCDDD6;
+  --color-line-2: #EEEEE8;
+  --color-field: #C9CAC2;
+  --color-muted: #50554F;
+  --color-muted-2: #6B706A;
+  --color-on-ink: #F2F2EE;
+  --color-on-ink-muted: #A3A8A3;
+  --color-accent: #F5C518;
+  --color-danger: #C2410C;
+  --color-danger-ink: #A3440B;
+  --color-danger-bg: #FBEDE6;
+  --color-danger-soft: #F9C4AA;
+  --color-success: #1E6B3E;
+  --color-success-bg: #E5F3EA;
+  --color-warning: #6B5300;
+  --color-warning-bg: #FDF3C4;
+  --color-plate: #F4F4F0;
+
+  --font-display: var(--font-space-grotesk), "Space Grotesk", sans-serif;
+  --font-sans: var(--font-plex), "IBM Plex Sans", system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains), "JetBrains Mono", monospace;
+}

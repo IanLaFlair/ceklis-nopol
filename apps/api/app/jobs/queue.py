@@ -14,8 +14,9 @@ async def enqueue(name: str, *args) -> None:
     global _pool
     try:
         if _pool is None:
-            _pool = await create_pool(RedisSettings.from_dsn(get_settings().redis_url),
-                                      conn_timeout=1, conn_retries=0)
+            settings = RedisSettings.from_dsn(get_settings().redis_url)
+            settings.conn_timeout, settings.conn_retries = 1, 0
+            _pool = await create_pool(settings)
         await _pool.enqueue_job(name, *args)
     except Exception as e:  # noqa: BLE001
         log.warning("enqueue %s gagal: %s", name, e)
