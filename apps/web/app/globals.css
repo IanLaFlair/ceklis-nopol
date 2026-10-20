@@ -61,3 +61,20 @@
     top: 50%;
   }
 }
+
+/* Input di latar gelap: kunci warna teks supaya autofill / riwayat isian browser tidak membuatnya hitam */
+@utility field-on-dark {
+  color: var(--color-on-ink);
+  -webkit-text-fill-color: var(--color-on-ink);
+  caret-color: var(--color-accent);
+  &::-webkit-search-cancel-button {
+    filter: invert(1);
+  }
+  &:-webkit-autofill,
+  &:-webkit-autofill:hover,
+  &:-webkit-autofill:focus {
+    -webkit-text-fill-color: var(--color-on-ink);
+    -webkit-box-shadow: 0 0 0 1000px var(--color-ink-2) inset;
+    transition: background-color 9999s;
+  }
+}

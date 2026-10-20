@@ -183,7 +183,7 @@ function IncidentView({ id, keep }: { id: number; keep: () => void }) {
               <label className="flex flex-col gap-1.5 text-[13px] text-on-ink-muted">
                 Catatan pemeriksaan
                 <textarea rows={2} value={note} onChange={(e) => setNote(e.target.value)} placeholder="mis. sudah dicek bersama pemilik"
-                  className="resize-none rounded-[10px] border border-ink-line bg-ink-2 px-3 py-2.5 text-base text-on-ink outline-none focus:border-accent sm:text-sm" />
+                  className="field-on-dark resize-none rounded-[10px] border border-ink-line bg-ink-2 px-3 py-2.5 text-base text-on-ink outline-none focus:border-accent sm:text-sm" />
               </label>
               <div className="flex flex-wrap gap-2">
                 <button disabled={busy} onClick={() => act(`/incidents/${inc.id}/decision`, { decision: "damage_confirmed", note })}
