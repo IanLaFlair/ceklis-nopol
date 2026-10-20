@@ -6,7 +6,8 @@
     "build:web": "pnpm --filter @ceklis/web build",
     "dev:api": "cd apps/api && uv run uvicorn app.main:app --reload --port 8000",
     "test:api": "cd apps/api && uv run pytest",
-    "test:web": "pnpm --filter @ceklis/web test"
+    "test:web": "pnpm --filter @ceklis/web test",
+    "preview:web": "pnpm --filter @ceklis/web preview"
   },
   "packageManager": "pnpm@10.26.2"
 }

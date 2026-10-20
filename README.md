@@ -30,6 +30,9 @@ pnpm install
 pnpm dev:web                                 # http://localhost:3000 — /api diteruskan ke FastAPI
 ```
 
+Untuk dibagikan / dicoba orang lain (mis. lewat tunnel), pakai build produksi — jauh lebih ringan dari dev server
+(JS halaman login ±177 KB vs ±9 MB): `pnpm preview:web`.
+
 Semua sekaligus (build image): `docker compose up --build` → web di :3000, API di :8000.
 
 Akun demo (`--demo`, hanya untuk dev):
