@@ -22,7 +22,7 @@ const nextConfig: NextConfig = {
   // Boleh diganti supaya dua `next dev` bisa jalan berdampingan
   distDir: process.env.NEXT_DIST_DIR ?? ".next",
   // Buka dev server lewat tunnel (ngrok) untuk dicoba di HP
-  allowedDevOrigins: ["*.ngrok-free.app", "*.ngrok.app", "*.ngrok.io"],
+  allowedDevOrigins: ["*.ngrok-free.app", "*.ngrok-free.dev", "*.ngrok.app", "*.ngrok.dev", "*.ngrok.io"],
   transpilePackages: ["@ceklis/design-tokens"],
   async rewrites() {
     // Satu origin untuk PWA + API supaya cookie sesi httpOnly berlaku (prod: reverse proxy yang sama)

@@ -52,6 +52,10 @@ export async function api<T>(path: string, init: RequestInit & { json?: unknown 
     throw new ApiError(0, "Tidak ada koneksi");
   }
   if (res.status === 204) return undefined as T;
+  // Balasan non-JSON berasal dari proxy/tunnel (mis. ngrok "endpoint offline"), bukan dari API Ceklis
+  if (!(res.headers.get("content-type") ?? "").includes("application/json")) {
+    throw new ApiError(0, "Server tidak terjangkau. Cek koneksi lalu coba lagi.");
+  }
   const body = await res.json().catch(() => null);
   if (!res.ok) {
     // 502/503/504 dari proxy = server belum terjangkau, perlakukan seperti offline
