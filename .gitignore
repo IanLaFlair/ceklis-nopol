@@ -12,3 +12,4 @@ apps/web/public/sw.js.map
 apps/web/public/swe-worker-*.js
 .DS_Store
 *.tsbuildinfo
+.claude/

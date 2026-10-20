@@ -211,7 +211,7 @@ function Checkout({ tx, source, reload }: { tx: TxDetail; source: string; reload
                   <button onClick={() => { capSide.current = side; outCam.open(); }} aria-label={`Foto ${SIDE_LABEL[side]} saat keluar`}
                     className={`relative flex h-[132px] flex-col items-center justify-center gap-1.5 overflow-hidden rounded-[14px] border-2 ${outPhotos[side] ? "border-ink bg-ink text-accent" : "border-dashed border-[#9A9F99] bg-surface text-muted"}`}>
                     <Thumb blob={outPhotos[side]?.blob} alt="" />
-                    <span className="relative flex flex-col items-center gap-1.5 rounded-lg px-2 py-1 [text-shadow:0_1px_2px_rgb(0_0_0/0.4)]">
+                    <span className={`relative flex flex-col items-center gap-1.5 rounded-lg px-2.5 py-1.5 ${outPhotos[side] ? "bg-ink/80" : ""}`}>
                       <Camera size={26} />
                       <span className="text-[13px] font-semibold">{outCam.busy ? "Memproses…" : outPhotos[side] ? "Ulangi foto" : "Foto sekarang"}</span>
                     </span>
