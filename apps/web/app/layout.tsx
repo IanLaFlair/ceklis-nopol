@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { IBM_Plex_Sans, JetBrains_Mono, Space_Grotesk } from "next/font/google";
+import { DevSwCleanup } from "@/components/dev-sw-cleanup";
 import "./globals.css";
 
 const display = Space_Grotesk({ subsets: ["latin"], weight: ["500", "600", "700"], variable: "--font-space-grotesk" });
@@ -25,7 +26,10 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="id" className={`${display.variable} ${body.variable} ${mono.variable}`}>
-      <body className="min-h-dvh antialiased">{children}</body>
+      <body className="min-h-dvh antialiased">
+        {process.env.NODE_ENV === "development" && <DevSwCleanup />}
+        {children}
+      </body>
     </html>
   );
 }
