@@ -1,0 +1,65 @@
+# Dev & self-host stack. `docker compose up` menyalakan semuanya;
+# untuk dev lokal cukup `docker compose up -d db redis storage`.
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ceklis
+      POSTGRES_PASSWORD: ceklis
+      POSTGRES_DB: ceklis
+    ports: ["5432:5432"]
+    volumes: [pgdata:/var/lib/postgresql/data, ./infra/initdb:/docker-entrypoint-initdb.d:ro]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ceklis"]
+      interval: 3s
+      retries: 20
+
+  redis:
+    image: redis:7-alpine
+    ports: ["6379:6379"]
+
+  # S3-compatible untuk dev (image MinIO sudah tidak publik). Bucket dibuat otomatis oleh API saat start.
+  storage:
+    image: rustfs/rustfs:latest
+    environment:
+      RUSTFS_ACCESS_KEY: ceklis
+      RUSTFS_SECRET_KEY: ceklis-secret
+      RUSTFS_CONSOLE_ENABLE: "true"
+    ports: ["9000:9000", "9001:9001"]
+    volumes: [s3data:/data]
+
+  api:
+    build: ./apps/api
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+psycopg://ceklis:ceklis@db:5432/ceklis
+      REDIS_URL: redis://redis:6379/0
+      S3_ENDPOINT: http://storage:9000
+    depends_on:
+      db: { condition: service_healthy }
+      redis: { condition: service_started }
+    command: sh -c "alembic upgrade head && python -m app.seed --base && uvicorn app.main:app --host 0.0.0.0 --port 8000"
+    ports: ["8000:8000"]
+
+  worker:
+    build: ./apps/api
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+psycopg://ceklis:ceklis@db:5432/ceklis
+      REDIS_URL: redis://redis:6379/0
+      S3_ENDPOINT: http://storage:9000
+    depends_on: [api]
+    command: arq app.jobs.worker.WorkerSettings
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    environment:
+      API_INTERNAL_URL: http://api:8000
+    depends_on: [api]
+    ports: ["3000:3000"]
+
+volumes:
+  pgdata:
+  s3data:

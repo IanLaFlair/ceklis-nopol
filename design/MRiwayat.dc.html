@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<title>Ceklis — Riwayat</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&amp;family=IBM+Plex+Sans:wght@400;500;600&amp;family=JetBrains+Mono:wght@500;700&amp;display=swap">
+<style>
+body{margin:0}
+*{box-sizing:border-box}
+a{color:inherit;text-decoration:none}
+button{font-family:inherit;cursor:pointer}
+.row:active{background:#F7F7F3}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; overflow: hidden; display: flex; flex-direction: column; background: #F2F2EE; color: #0E100F; font-family: 'IBM Plex Sans', system-ui, sans-serif">
+  <header style="background: #0E100F; color: #F2F2EE; padding: 48px 20px 18px; display: flex; flex-direction: column; gap: 14px">
+    <div style="display: flex; flex-direction: column; gap: 2px">
+      <span style="font-size: 12px; color: #A3A8A3">Pemeriksaan oleh kamu · Lobby 2</span>
+      <h1 style="margin: 0; font-family: 'Space Grotesk', sans-serif; font-size: 26px; letter-spacing: -0.02em">Riwayat</h1>
+    </div>
+    <div role="group" aria-label="Periode" style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); background: #1A1D1B; border: 1px solid #2A2E2B; border-radius: 12px; padding: 4px">
+      <sc-for list="{{periods}}" as="p" hint-placeholder-count="3"><button onClick="{{p.pick}}" aria-pressed="{{p.on}}" style="{{p.style}}">{{p.label}}</button></sc-for>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px">
+      <div style="display: flex; flex-direction: column"><span style="font-family: 'Space Grotesk', sans-serif; font-size: 24px; font-weight: 700; color: {{accent}}">{{sum.inn}}</span><span style="font-size: 12px; color: #A3A8A3">Check in</span></div>
+      <div style="display: flex; flex-direction: column"><span style="font-family: 'Space Grotesk', sans-serif; font-size: 24px; font-weight: 700">{{sum.out}}</span><span style="font-size: 12px; color: #A3A8A3">Check out</span></div>
+      <div style="display: flex; flex-direction: column"><span style="font-family: 'Space Grotesk', sans-serif; font-size: 24px; font-weight: 700; color: #F9C4AA">{{sum.inc}}</span><span style="font-size: 12px; color: #A3A8A3">Insiden</span></div>
+    </div>
+  </header>
+
+  <main style="flex: 1; overflow-y: auto; padding: 14px 20px 20px; display: flex; flex-direction: column; gap: 14px">
+    <sc-for list="{{groups}}" as="g" hint-placeholder-count="2">
+      <section style="display: flex; flex-direction: column; gap: 8px">
+        <h2 style="margin: 0; font-size: 13px; font-weight: 600; color: #50554F; text-transform: uppercase; letter-spacing: 0.05em">{{g.label}}</h2>
+        <div style="background: #FFFFFF; border: 1px solid #DCDDD6; border-radius: 16px; overflow: hidden">
+          <sc-for list="{{g.items}}" as="it" hint-placeholder-count="4">
+            <a class="row" href="MCheckout.dc.html" style="display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-top: {{it.border}}; min-height: 64px">
+              <span aria-hidden="true" style="{{it.icon}}">{{it.kindShort}}</span>
+              <span style="flex: 1; min-width: 0; display: flex; flex-direction: column">
+                <span style="font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 14px">{{it.plate}}</span>
+                <span style="font-size: 12px; color: #50554F">{{it.kind}} · {{it.time}} · {{it.detail}}</span>
+              </span>
+              <span style="{{it.badge}}">{{it.status}}</span>
+            </a>
+          </sc-for>
+        </div>
+      </section>
+    </sc-for>
+  </main>
+
+  <nav aria-label="Menu" style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); background: #FFFFFF; border-top: 1px solid #DCDDD6; padding: 6px 8px 22px">
+    <a href="MHome.dc.html" style="display: flex; flex-direction: column; align-items: center; gap: 3px; min-height: 52px; justify-content: center; font-size: 11px; color: #50554F">
+      <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11l8-7 8 7v9H4z"/></svg>Beranda</a>
+    <a href="MAktif.dc.html" style="display: flex; flex-direction: column; align-items: center; gap: 3px; min-height: 52px; justify-content: center; font-size: 11px; color: #50554F">
+      <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 17h14l-1.5-6a2 2 0 0 0-2-1.5h-7a2 2 0 0 0-2 1.5z"/><circle cx="7.5" cy="17.5" r="1.5"/><circle cx="16.5" cy="17.5" r="1.5"/></svg>Aktif</a>
+    <a href="MRiwayat.dc.html" aria-current="page" style="display: flex; flex-direction: column; align-items: center; gap: 3px; min-height: 52px; justify-content: center; font-size: 11px; font-weight: 600">
+      <span style="width: 48px; height: 28px; border-radius: 999px; background: {{accent}}; display: flex; align-items: center; justify-content: center"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0E100F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg></span>Riwayat</a>
+    <a href="MAkun.dc.html" style="display: flex; flex-direction: column; align-items: center; gap: 3px; min-height: 52px; justify-content: center; font-size: 11px; color: #50554F">
+      <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>Akun</a>
+  </nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#F5C518","options":["#F5C518","#FF8A1F","#B8F53A"]},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { p: 'today' };
+  }
+  renderVals() {
+    const accent = this.props.accent ?? '#F5C518';
+    const s = this.state;
+    const pill = 'font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 999px; white-space: nowrap; ';
+    const ST = { ok: ['Selesai', pill + 'background: #E5F3EA; color: #1E6B3E'], parked: ['Masih parkir', pill + 'background: #FDF3C4; color: #6B5300'], inc: ['Insiden', pill + 'background: #FBEDE6; color: #A3440B'] };
+    const ic = 'width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; ';
+    const mk = (kind, plate, time, detail, st) => ({ kind: kind === 'in' ? 'Check in' : 'Check out', kindShort: kind === 'in' ? 'IN' : 'OUT', icon: ic + (kind === 'in' ? 'background: ' + accent + '; color: #0E100F' : 'background: #0E100F; color: #F2F2EE'), plate, time, detail, status: ST[st][0], badge: ST[st][1] });
+    const TODAY = [
+      mk('out', 'L 1802 NA', '14.56', 'pintu depan kiri', 'inc'),
+      mk('in', 'B 1234 ABC', '14.41', '4 foto · semua baik', 'parked'),
+      mk('out', 'H 3301 BB', '14.10', 'kondisi sama', 'ok'),
+      mk('in', 'L 1802 NA', '12.20', '4 foto · 1 rusak', 'inc'),
+      mk('in', 'H 3301 BB', '11.05', '4 foto · semua baik', 'ok')
+    ];
+    const YEST = [
+      mk('out', 'B 5590 TRE', '20.44', 'kondisi sama', 'ok'),
+      mk('in', 'B 5590 TRE', '18.02', '4 foto · semua baik', 'ok'),
+      mk('out', 'L 99 AA', '16.30', 'kondisi sama', 'ok')
+    ];
+    const withBorder = (arr) => arr.map((x, i) => ({ ...x, border: i === 0 ? '0' : '1px solid #EEEEE8' }));
+    const groups = s.p === 'today' ? [{ label: 'Hari ini · Selasa 20 Okt', items: withBorder(TODAY) }]
+      : s.p === 'yest' ? [{ label: 'Kemarin · Senin 19 Okt', items: withBorder(YEST) }]
+      : [{ label: 'Hari ini · Selasa 20 Okt', items: withBorder(TODAY) }, { label: 'Kemarin · Senin 19 Okt', items: withBorder(YEST) }];
+    const all = groups.flatMap((g) => g.items);
+    const seg = 'min-height: 40px; border: 0; border-radius: 9px; font-size: 14px; ';
+    return {
+      accent,
+      periods: [['today', 'Hari ini'], ['yest', 'Kemarin'], ['week', '7 hari']].map(([id, label]) => ({ label, on: s.p === id, style: s.p === id ? seg + 'background: ' + accent + '; color: #0E100F; font-weight: 700' : seg + 'background: transparent; color: #C9CCC6', pick: () => this.setState({ p: id }) })),
+      groups,
+      sum: { inn: all.filter((x) => x.kindShort === 'IN').length, out: all.filter((x) => x.kindShort === 'OUT').length, inc: all.filter((x) => x.status === 'Insiden' && x.kindShort === 'OUT').length }
+    };
+  }
+}
+</script>
+</body>
+</html>

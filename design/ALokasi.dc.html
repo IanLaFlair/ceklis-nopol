@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<title>Ceklis Admin — Lokasi dan petugas</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&amp;family=IBM+Plex+Sans:wght@400;500;600&amp;family=JetBrains+Mono:wght@500;700&amp;display=swap">
+<style>
+body{margin:0;background:#F2F2EE}
+*{box-sizing:border-box}
+a{color:inherit;text-decoration:none}
+button{font-family:inherit;cursor:pointer}
+.nav a:hover{background:#1E2220;color:#FFFFFF}
+.node:hover{background:#F2F2EE}
+.row:hover{background:#F7F7F3}
+</style>
+</helmet>
+<div style="font-family: 'IBM Plex Sans', system-ui, sans-serif; color: #0E100F; background: #F2F2EE; min-height: 100vh; display: flex; flex-wrap: wrap">
+  <aside style="flex: 1 1 232px; max-width: 100%; background: #0E100F; color: #B4B8B3; padding: 22px 14px; display: flex; flex-direction: column; gap: 24px">
+    <a href="ADashboard.dc.html" style="display: flex; align-items: center; gap: 10px; padding: 4px 8px; color: #F2F2EE">
+      <span aria-hidden="true" style="width: 32px; height: 32px; border-radius: 8px; background: {{accent}}; display: flex; align-items: center; justify-content: center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0E100F" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l4.5 4.5L19 7"/></svg></span>
+      <span style="display: flex; flex-direction: column; line-height: 1.1"><span style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 20px">ceklis</span><span style="font-size: 11px; color: #8F948E">Admin · by nopol</span></span>
+    </a>
+    <nav class="nav" aria-label="Admin" style="display: flex; flex-direction: column; gap: 2px; font-size: 15px">
+      <a href="ADashboard.dc.html" style="display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 8px; min-height: 44px"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>Dashboard</a>
+      <a href="ATransaksi.dc.html" style="display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 8px; min-height: 44px"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 17h14l-1.5-6a2 2 0 0 0-2-1.5h-7a2 2 0 0 0-2 1.5z"/><circle cx="7.5" cy="17.5" r="1.5"/><circle cx="16.5" cy="17.5" r="1.5"/></svg>Transaksi</a>
+      <a href="AInsiden.dc.html" style="display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 8px; min-height: 44px"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 4.5-3.4 8-8 9-4.6-1-8-4.5-8-9V6z"/><path d="M12 9v4M12 16h.01"/></svg><span style="flex: 1">Insiden / Komplain</span><span style="background: #C2410C; color: #FFFFFF; font-size: 11px; font-weight: 700; padding: 2px 7px; border-radius: 999px">3</span></a>
+      <a href="ALokasi.dc.html" aria-current="page" style="display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 8px; min-height: 44px; background: #1E2220; color: #FFFFFF; box-shadow: inset 2px 0 0 {{accent}}"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>Lokasi &amp; Petugas</a>
+      <a href="AChecklist.dc.html" style="display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 8px; min-height: 44px"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V3h6v1M9 11l2 2 4-4M9 17h6"/></svg>Template Checklist</a>
+      <a href="ADashboard.dc.html#laporan" style="display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 8px; min-height: 44px"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V5M4 19h16M8 15v-4M12 15V8M16 15v-6"/></svg>Laporan</a>
+    </nav>
+    <div style="margin-top: auto; display: flex; align-items: center; gap: 10px; padding: 4px 6px; font-size: 13px">
+      <span aria-hidden="true" style="width: 32px; height: 32px; border-radius: 50%; background: #2A2E2B; color: #F2F2EE; display: flex; align-items: center; justify-content: center; font-weight: 600">A</span>
+      <div style="display: flex; flex-direction: column; min-width: 0"><span style="color: #F2F2EE">Ari T.</span><span style="color: #8F948E">Super admin</span></div>
+    </div>
+  </aside>
+
+  <main style="flex: 999 1 560px; min-width: 0; padding: 24px 32px 48px; display: flex; flex-direction: column; gap: 20px">
+    <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px">
+      <div style="display: flex; flex-direction: column; gap: 4px">
+        <h1 style="margin: 0; font-family: 'Space Grotesk', sans-serif; font-size: 30px; letter-spacing: -0.02em">Lokasi &amp; Petugas</h1>
+        <span style="font-size: 14px; color: #50554F">Klien → lokasi → pos (lobby). Petugas ditugaskan per pos.</span>
+      </div>
+      <button style="min-height: 46px; padding: 0 16px; border-radius: 12px; border: 0; background: {{accent}}; color: #0E100F; font-weight: 700; font-size: 14px; display: flex; align-items: center; gap: 8px"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Tambah lokasi</button>
+    </div>
+
+    <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start">
+      <!-- tree -->
+      <section aria-label="Struktur lokasi" style="flex: 1 1 280px; min-width: 0; background: #FFFFFF; border: 1px solid #DCDDD6; border-radius: 14px; padding: 10px">
+        <label style="display: flex; align-items: center; gap: 8px; border: 1px solid #DCDDD6; border-radius: 8px; padding: 0 10px; min-height: 40px; margin: 4px 4px 10px; font-size: 14px; color: #50554F">
+          <svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4-4"/></svg>
+          <span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Cari lokasi</span>
+          <input placeholder="Cari lokasi" style="flex: 1; border: 0; outline: 0; font-family: inherit; font-size: 14px">
+        </label>
+        <sc-for list="{{tree}}" as="n" hint-placeholder-count="10">
+          <sc-if value="{{n.isGroup}}" hint-placeholder-val="{{ false }}">
+            <div style="padding: 12px 10px 6px; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #6B706A">{{n.label}}</div>
+          </sc-if>
+          <sc-if value="{{n.isSite}}" hint-placeholder-val="{{ true }}">
+            <button class="node" onClick="{{n.pick}}" style="{{n.style}}">
+              <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>
+              <span style="flex: 1; text-align: left">{{n.label}}</span><span style="font-size: 12px; color: #6B706A">{{n.meta}}</span>
+            </button>
+          </sc-if>
+        </sc-for>
+      </section>
+
+      <!-- detail -->
+      <section aria-label="Detail lokasi" style="flex: 2.4 1 620px; min-width: 0; display: flex; flex-direction: column; gap: 14px">
+        <div style="background: #0E100F; color: #F2F2EE; border-radius: 14px; padding: 20px; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 14px">
+          <div style="display: flex; flex-direction: column; gap: 4px">
+            <span style="font-size: 13px; color: #A3A8A3">{{site.group}}</span>
+            <strong style="font-family: 'Space Grotesk', sans-serif; font-size: 24px">{{site.name}}</strong>
+            <span style="font-size: 13px; color: #A3A8A3">[Alamat lengkap] · template: {{site.template}}</span>
+          </div>
+          <div style="display: flex; gap: 8px">
+            <button style="min-height: 44px; padding: 0 14px; border-radius: 10px; border: 1px solid #343935; background: transparent; color: #F2F2EE; font-size: 14px">Ubah</button>
+            <button style="min-height: 44px; padding: 0 14px; border-radius: 10px; border: 0; background: {{accent}}; color: #0E100F; font-weight: 700; font-size: 14px">+ Tambah pos</button>
+          </div>
+        </div>
+
+        <div style="background: #FFFFFF; border: 1px solid #DCDDD6; border-radius: 14px; overflow: hidden">
+          <div style="padding: 16px 20px; border-bottom: 1px solid #E6E6E0"><h2 style="margin: 0; font-family: 'Space Grotesk', sans-serif; font-size: 17px">Pos valet <span style="color: #6B706A; font-weight: 500">{{site.posCount}}</span></h2></div>
+          <div style="overflow-x: auto">
+            <table style="width: 100%; border-collapse: collapse; font-size: 14px; min-width: 620px">
+              <thead><tr style="text-align: left; color: #50554F; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em"><th style="padding: 10px 20px; font-weight: 500">Pos</th><th style="padding: 10px 12px; font-weight: 500">Petugas</th><th style="padding: 10px 12px; font-weight: 500">Supervisor</th><th style="padding: 10px 12px; font-weight: 500; text-align: right">Masih parkir</th><th style="padding: 10px 20px; font-weight: 500">Status</th></tr></thead>
+              <tbody>
+                <sc-for list="{{site.pos}}" as="p" hint-placeholder-count="6">
+                  <tr class="row" style="border-top: 1px solid #EEEEE8">
+                    <td style="padding: 12px 20px; font-weight: 600">{{p.name}}</td>
+                    <td style="padding: 12px">{{p.staff}}</td>
+                    <td style="padding: 12px">{{p.spv}}</td>
+                    <td style="padding: 12px; text-align: right; font-family: 'JetBrains Mono', monospace">{{p.parked}}</td>
+                    <td style="padding: 12px 20px"><span style="{{p.badge}}">{{p.status}}</span></td>
+                  </tr>
+                </sc-for>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div style="background: #FFFFFF; border: 1px solid #DCDDD6; border-radius: 14px; overflow: hidden">
+          <div style="padding: 16px 20px; border-bottom: 1px solid #E6E6E0; display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap">
+            <h2 style="margin: 0; font-family: 'Space Grotesk', sans-serif; font-size: 17px">Petugas di lokasi ini</h2>
+            <button style="min-height: 40px; padding: 0 14px; border-radius: 10px; border: 1.5px solid #0E100F; background: #FFFFFF; font-weight: 600; font-size: 14px">Undang petugas</button>
+          </div>
+          <div style="overflow-x: auto">
+            <table style="width: 100%; border-collapse: collapse; font-size: 14px; min-width: 620px">
+              <thead><tr style="text-align: left; color: #50554F; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em"><th style="padding: 10px 20px; font-weight: 500">Nama</th><th style="padding: 10px 12px; font-weight: 500">Peran</th><th style="padding: 10px 12px; font-weight: 500">Pos</th><th style="padding: 10px 12px; font-weight: 500; text-align: right">Pemeriksaan hari ini</th><th style="padding: 10px 20px; font-weight: 500">Terakhir aktif</th></tr></thead>
+              <tbody>
+                <sc-for list="{{site.staff}}" as="st" hint-placeholder-count="6">
+                  <tr class="row" style="border-top: 1px solid #EEEEE8">
+                    <td style="padding: 12px 20px; font-weight: 600">{{st.name}}</td>
+                    <td style="padding: 12px"><span style="{{st.roleStyle}}">{{st.role}}</span></td>
+                    <td style="padding: 12px">{{st.pos}}</td>
+                    <td style="padding: 12px; text-align: right; font-family: 'JetBrains Mono', monospace">{{st.count}}</td>
+                    <td style="padding: 12px 20px; color: #50554F">{{st.last}}</td>
+                  </tr>
+                </sc-for>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#F5C518","options":["#F5C518","#FF8A1F","#B8F53A"]},"$preview":{"width":1440,"height":1000}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { site: 'pms' };
+  }
+  renderVals() {
+    const accent = this.props.accent ?? '#F5C518';
+    const s = this.state;
+    const pill = 'display: inline-flex; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; ';
+    const on = pill + 'background: #E5F3EA; color: #1E6B3E', off = pill + 'background: #EEEEE8; color: #50554F';
+    const spv = pill + 'background: #0E100F; color: #F2F2EE', ptg = pill + 'background: #EEEEE8; color: #3E433E';
+    const SITES = {
+      pms: { group: 'Pakuwon Group', name: 'Pakuwon Mall Surabaya', template: 'Standar Mobil', pos: [
+        ['Lobby 1', 'Agus, Dian', 'Hendra', 6, true], ['Lobby 2', 'Budi, Rina', 'Hendra', 7, true], ['Lobby 3', 'Hendra', 'Hendra', 5, true],
+        ['Lobby 4', 'Sari', 'Wawan', 5, true], ['Lobby 5', 'Yoga', 'Wawan', 4, true], ['Lobby 6', 'Fajar', 'Wawan', 4, false]],
+        staff: [['Hendra', 'Supervisor', 'Lobby 1–3', 31, 'baru saja'], ['Wawan', 'Supervisor', 'Lobby 4–6', 12, '5 menit lalu'], ['Budi', 'Petugas', 'Lobby 2', 22, 'baru saja'], ['Rina', 'Petugas', 'Lobby 2', 15, '2 menit lalu'], ['Agus', 'Petugas', 'Lobby 1', 19, '1 menit lalu'], ['Sari', 'Petugas', 'Lobby 4', 15, '8 menit lalu']] },
+      pmy: { group: 'Pakuwon Group', name: 'Pakuwon Mall Yogyakarta', template: 'Standar Mobil', pos: [['Lobby Utama', 'Wulan, Eko', 'Eko', 10, true]],
+        staff: [['Eko', 'Supervisor', 'Lobby Utama', 14, 'baru saja'], ['Wulan', 'Petugas', 'Lobby Utama', 17, '3 menit lalu']] },
+      tsm: { group: 'Trans Studio Mall', name: 'Trans Studio Mall Bandung', template: 'Standar Mobil + VIP', pos: [['Lobby Utama', 'Asep, Rani', 'Asep', 9, true]],
+        staff: [['Asep', 'Supervisor', 'Lobby Utama', 12, '4 menit lalu'], ['Rani', 'Petugas', 'Lobby Utama', 16, 'baru saja']] }
+    };
+    const site = SITES[s.site];
+    const node = 'width: 100%; display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 10px; border: 0; border-radius: 8px; font-size: 14px; ';
+    const mk = (id, label, meta) => ({ isSite: true, isGroup: false, label, meta, style: node + (s.site === id ? 'background: #FDF3C4; font-weight: 600; box-shadow: inset 3px 0 0 ' + accent : 'background: transparent'), pick: () => this.setState({ site: id }) });
+    return {
+      accent,
+      tree: [
+        { isGroup: true, isSite: false, label: 'Pakuwon Group' },
+        mk('pms', 'Pakuwon Mall Surabaya', '6 pos'),
+        mk('pmy', 'Pakuwon Mall Yogyakarta', '1 pos'),
+        { isGroup: true, isSite: false, label: 'Trans Studio Mall' },
+        mk('tsm', 'Trans Studio Mall Bandung', '1 pos')
+      ],
+      site: {
+        group: site.group, name: site.name, template: site.template, posCount: site.pos.length,
+        pos: site.pos.map(([name, staff, sv, parked, active]) => ({ name, staff, spv: sv, parked, status: active ? 'Aktif' : 'Tutup hari ini', badge: active ? on : off })),
+        staff: site.staff.map(([name, role, pos, count, last]) => ({ name, role, pos, count, last, roleStyle: role === 'Supervisor' ? spv : ptg }))
+      }
+    };
+  }
+}
+</script>
+</body>
+</html>

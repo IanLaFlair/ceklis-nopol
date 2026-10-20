@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<title>Ceklis Admin — Transaksi</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&amp;family=IBM+Plex+Sans:wght@400;500;600&amp;family=JetBrains+Mono:wght@500;700&amp;display=swap">
+<style>
+body{margin:0;background:#F2F2EE}
+*{box-sizing:border-box}
+a{color:inherit;text-decoration:none}
+button{font-family:inherit;cursor:pointer}
+.nav a:hover{background:#1E2220;color:#FFFFFF}
+.row:hover{background:#F7F7F3}
+</style>
+</helmet>
+<div style="font-family: 'IBM Plex Sans', system-ui, sans-serif; color: #0E100F; background: #F2F2EE; min-height: 100vh; display: flex; flex-wrap: wrap">
+  <aside style="flex: 1 1 232px; max-width: 100%; background: #0E100F; color: #B4B8B3; padding: 22px 14px; display: flex; flex-direction: column; gap: 24px">
+    <a href="ADashboard.dc.html" style="display: flex; align-items: center; gap: 10px; padding: 4px 8px; color: #F2F2EE">
+      <span aria-hidden="true" style="width: 32px; height: 32px; border-radius: 8px; background: {{accent}}; display: flex; align-items: center; justify-content: center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0E100F" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l4.5 4.5L19 7"/></svg></span>
+      <span style="display: flex; flex-direction: column; line-height: 1.1"><span style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 20px">ceklis</span><span style="font-size: 11px; color: #8F948E">Admin · by nopol</span></span>
+    </a>
+    <nav class="nav" aria-label="Admin" style="display: flex; flex-direction: column; gap: 2px; font-size: 15px">
+      <a href="ADashboard.dc.html" style="display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 8px; min-height: 44px"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>Dashboard</a>
+      <a href="ATransaksi.dc.html" aria-current="page" style="display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 8px; min-height: 44px; background: #1E2220; color: #FFFFFF; box-shadow: inset 2px 0 0 {{accent}}"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 17h14l-1.5-6a2 2 0 0 0-2-1.5h-7a2 2 0 0 0-2 1.5z"/><circle cx="7.5" cy="17.5" r="1.5"/><circle cx="16.5" cy="17.5" r="1.5"/></svg>Transaksi</a>
+      <a href="AInsiden.dc.html" style="display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 8px; min-height: 44px"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 4.5-3.4 8-8 9-4.6-1-8-4.5-8-9V6z"/><path d="M12 9v4M12 16h.01"/></svg><span style="flex: 1">Insiden / Komplain</span><span style="background: #C2410C; color: #FFFFFF; font-size: 11px; font-weight: 700; padding: 2px 7px; border-radius: 999px">3</span></a>
+      <a href="ALokasi.dc.html" style="display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 8px; min-height: 44px"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>Lokasi &amp; Petugas</a>
+      <a href="AChecklist.dc.html" style="display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 8px; min-height: 44px"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V3h6v1M9 11l2 2 4-4M9 17h6"/></svg>Template Checklist</a>
+      <a href="ADashboard.dc.html#laporan" style="display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 8px; min-height: 44px"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V5M4 19h16M8 15v-4M12 15V8M16 15v-6"/></svg>Laporan</a>
+    </nav>
+    <div style="margin-top: auto; display: flex; align-items: center; gap: 10px; padding: 4px 6px; font-size: 13px">
+      <span aria-hidden="true" style="width: 32px; height: 32px; border-radius: 50%; background: #2A2E2B; color: #F2F2EE; display: flex; align-items: center; justify-content: center; font-weight: 600">A</span>
+      <div style="display: flex; flex-direction: column; min-width: 0"><span style="color: #F2F2EE">Ari T.</span><span style="color: #8F948E">Super admin</span></div>
+    </div>
+  </aside>
+
+  <main style="flex: 999 1 560px; min-width: 0; padding: 24px 32px 48px; display: flex; flex-direction: column; gap: 20px">
+    <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px">
+      <div style="display: flex; flex-direction: column; gap: 4px">
+        <h1 style="margin: 0; font-family: 'Space Grotesk', sans-serif; font-size: 30px; letter-spacing: -0.02em">Transaksi</h1>
+        <span style="font-size: 14px; color: #50554F">Kendaraan masuk, keluar, dan data kendaraan · Pakuwon Mall Surabaya</span>
+      </div>
+      <label style="display: flex; align-items: center; gap: 8px; background: #FFFFFF; border: 1.5px solid #C9CAC2; border-radius: 12px; padding: 0 12px; min-height: 46px; min-width: 300px">
+        <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#50554F" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4-4"/></svg>
+        <span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Cari</span>
+        <input placeholder="Cari plat, jenis, atau warna" style="flex: 1; border: 0; outline: 0; font-family: inherit; font-size: 14px">
+      </label>
+    </div>
+
+    <div role="tablist" aria-label="Filter" style="display: flex; flex-wrap: wrap; gap: 8px">
+      <sc-for list="{{tabs}}" as="t" hint-placeholder-count="4"><button role="tab" aria-selected="{{t.on}}" onClick="{{t.pick}}" style="{{t.style}}">{{t.label}} <span style="opacity: .7">{{t.n}}</span></button></sc-for>
+    </div>
+
+    <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start">
+      <!-- list -->
+      <section aria-label="Daftar transaksi" style="flex: 1 1 420px; min-width: 0; background: #FFFFFF; border: 1px solid #DCDDD6; border-radius: 14px; overflow: hidden">
+        <sc-for list="{{list}}" as="r" hint-placeholder-count="7">
+          <button class="row" onClick="{{r.pick}}" style="{{r.style}}">
+            <span style="background: #F4F4F0; border: 2px solid #0E100F; border-radius: 4px; padding: 2px 8px; font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 13px; white-space: nowrap">{{r.plate}}</span>
+            <span style="flex: 1; min-width: 0; display: flex; flex-direction: column; text-align: left">
+              <span style="font-size: 14px; font-weight: 500">{{r.car}}</span>
+              <span style="font-size: 12px; color: #50554F">{{r.pos}} · {{r.time}}</span>
+            </span>
+            <span style="{{r.badge}}">{{r.status}}</span>
+          </button>
+        </sc-for>
+      </section>
+
+      <!-- detail -->
+      <section aria-label="Detail transaksi" style="flex: 1.5 1 560px; min-width: 0; display: flex; flex-direction: column; gap: 14px">
+        <div style="background: #0E100F; color: #F2F2EE; border-radius: 14px; padding: 20px; display: flex; flex-wrap: wrap; gap: 16px; align-items: center; justify-content: space-between">
+          <div style="display: flex; align-items: center; gap: 14px">
+            <span style="background: #F4F4F0; color: #0E100F; border: 2px solid {{accent}}; border-radius: 4px; padding: 4px 12px; font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 20px">{{d.plate}}</span>
+            <span style="display: flex; flex-direction: column"><strong style="font-size: 16px">{{d.car}}</strong><span style="font-size: 13px; color: #A3A8A3">{{d.pos}} · slot {{d.slot}} · tiket {{d.ticket}}</span></span>
+          </div>
+          <span style="{{d.badge}}">{{d.status}}</span>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px">
+          <div style="background: #FFFFFF; border: 1px solid #DCDDD6; border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 2px"><span style="font-size: 12px; color: #50554F">Masuk</span><strong>{{d.inAt}}</strong><span style="font-size: 12px; color: #50554F">oleh {{d.inBy}}</span></div>
+          <div style="background: #FFFFFF; border: 1px solid #DCDDD6; border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 2px"><span style="font-size: 12px; color: #50554F">Keluar</span><strong>{{d.outAt}}</strong><span style="font-size: 12px; color: #50554F">{{d.outBy}}</span></div>
+          <div style="background: #FFFFFF; border: 1px solid #DCDDD6; border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 2px"><span style="font-size: 12px; color: #50554F">Durasi</span><strong>{{d.dur}}</strong></div>
+          <div style="background: #FFFFFF; border: 1px solid #DCDDD6; border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 2px"><span style="font-size: 12px; color: #50554F">Barang di dalam</span><strong>{{d.items}}</strong></div>
+        </div>
+
+        <div style="background: #FFFFFF; border: 1px solid #DCDDD6; border-radius: 14px; padding: 18px; display: flex; flex-direction: column; gap: 12px">
+          <h2 style="margin: 0; font-family: 'Space Grotesk', sans-serif; font-size: 17px">Foto kondisi · check in vs check out</h2>
+          <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px">
+            <sc-for list="{{shots}}" as="p" hint-placeholder-count="4">
+              <div style="display: flex; flex-direction: column; gap: 6px">
+                <span style="font-size: 12px; font-weight: 600">{{p.side}}</span>
+                <div style="height: 76px; border-radius: 10px; background: #1A1D1B; color: #6F746E; display: flex; align-items: center; justify-content: center"><svg aria-hidden="true" width="44" height="26" viewBox="0 0 56 34" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 24h48v-6l-6-2-6-8H18l-7 8-7 2z"/><circle cx="15" cy="25" r="4"/><circle cx="41" cy="25" r="4"/></svg></div>
+                <div style="{{p.outStyle}}"><span style="font-size: 11px">{{p.outLabel}}</span></div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+
+        <div style="background: #FFFFFF; border: 1px solid #DCDDD6; border-radius: 14px; overflow: hidden">
+          <div style="padding: 16px 18px; border-bottom: 1px solid #E6E6E0"><h2 style="margin: 0; font-family: 'Space Grotesk', sans-serif; font-size: 17px">Checklist bagian luar</h2></div>
+          <table style="width: 100%; border-collapse: collapse; font-size: 14px">
+            <thead><tr style="text-align: left; color: #50554F; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em"><th style="padding: 10px 18px; font-weight: 500">Bagian</th><th style="padding: 10px 12px; font-weight: 500">Masuk</th><th style="padding: 10px 18px; font-weight: 500">Keluar</th></tr></thead>
+            <tbody>
+              <sc-for list="{{checks}}" as="c" hint-placeholder-count="14">
+                <tr style="border-top: 1px solid #EEEEE8; background: {{c.bg}}">
+                  <td style="padding: 9px 18px">{{c.part}}</td>
+                  <td style="padding: 9px 12px"><span style="{{c.inStyle}}">{{c.inn}}</span></td>
+                  <td style="padding: 9px 18px"><span style="{{c.outStyle}}">{{c.out}}</span></td>
+                </tr>
+              </sc-for>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#F5C518","options":["#F5C518","#FF8A1F","#B8F53A"]},"$preview":{"width":1440,"height":1200}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { tab: 'all', sel: 1 };
+  }
+  renderVals() {
+    const accent = this.props.accent ?? '#F5C518';
+    const s = this.state;
+    const pill = 'display: inline-flex; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; white-space: nowrap; ';
+    const ST = {
+      parked: { label: 'Masih parkir', badge: pill + 'background: #FDF3C4; color: #6B5300' },
+      done: { label: 'Selesai', badge: pill + 'background: #E5F3EA; color: #1E6B3E' },
+      inc: { label: 'Insiden', badge: pill + 'background: #FBEDE6; color: #A3440B' }
+    };
+    const DATA = [
+      { plate: 'B 1234 ABC', car: 'Toyota Fortuner · Hitam', pos: 'Lobby 2', time: 'masuk 14.41', st: 'parked', slot: 'B2-14', ticket: 'CKL-2310-0142', inAt: '14.41', inBy: 'Budi', outAt: '—', outBy: 'belum keluar', dur: '0j 15m', items: 'e-Toll', bad: [], newBad: [] },
+      { plate: 'L 1802 NA', car: 'Honda HR-V · Putih', pos: 'Lobby 2', time: 'keluar 14.56', st: 'inc', slot: 'B2-03', ticket: 'CKL-2310-0131', inAt: '12.20', inBy: 'Budi', outAt: '14.56', outBy: 'oleh Budi · ditahan', dur: '2j 36m', items: 'e-Toll', bad: ['Bamper belakang'], newBad: ['Pintu depan kiri'] },
+      { plate: 'W 5521 KQ', car: 'Mitsubishi Pajero · Abu-abu', pos: 'Lobby 4', time: 'keluar 14.30', st: 'done', slot: 'B1-22', ticket: 'CKL-2310-0120', inAt: '11.58', inBy: 'Sari', outAt: '14.30', outBy: 'oleh Sari', dur: '2j 32m', items: 'HP, e-Toll', bad: [], newBad: [] },
+      { plate: 'AG 77 RT', car: 'Toyota Alphard · Putih', pos: 'Lobby 1', time: 'masuk 11.30', st: 'parked', slot: 'VIP-02', ticket: 'CKL-2310-0109', inAt: '11.30', inBy: 'Agus', outAt: '—', outBy: 'belum keluar', dur: '3j 26m', items: 'Laptop', bad: ['Velg & ban'], newBad: [] },
+      { plate: 'B 9012 PQR', car: 'BMW 320i · Biru', pos: 'Lobby 3', time: 'keluar 13.10', st: 'done', slot: 'B2-09', ticket: 'CKL-2310-0098', inAt: '10.47', inBy: 'Hendra', outAt: '13.10', outBy: 'oleh Hendra', dur: '2j 23m', items: 'Tidak ada', bad: [], newBad: [] },
+      { plate: 'N 4410 FA', car: 'Suzuki Ertiga · Silver', pos: 'Lobby 1', time: 'masuk 10.12', st: 'parked', slot: 'B1-05', ticket: 'CKL-2310-0087', inAt: '10.12', inBy: 'Dian', outAt: '—', outBy: 'belum keluar', dur: '4j 44m', items: 'e-Toll, Uang', bad: [], newBad: [] }
+    ];
+    const tab = 'min-height: 40px; padding: 0 14px; border-radius: 999px; font-size: 14px; ';
+    const TABS = [['all', 'Semua'], ['parked', 'Masih parkir'], ['done', 'Selesai'], ['inc', 'Ada insiden']];
+    const filtered = DATA.map((d, i) => ({ ...d, i })).filter((d) => s.tab === 'all' || d.st === s.tab);
+    const d = DATA[s.sel] || DATA[0];
+    const rowBase = 'width: 100%; display: flex; align-items: center; gap: 12px; padding: 12px 16px; border: 0; border-top: 1px solid #EEEEE8; min-height: 64px; ';
+    const PARTS = ['Lampu depan kanan', 'Lampu depan kiri', 'Bamper depan', 'Kap mesin', 'Pintu depan kanan', 'Pintu depan kiri', 'Pintu belakang kanan', 'Pintu belakang kiri', 'Pintu bagasi', 'Lampu belakang kanan', 'Lampu belakang kiri', 'Bamper belakang', 'Kaca depan & belakang', 'Velg & ban'];
+    const ok = pill + 'background: #EEEEE8; color: #3E433E';
+    const bad = pill + 'background: #FBEDE6; color: #A3440B';
+    const dash = pill + 'background: transparent; color: #6B706A';
+    const outDone = d.outAt !== '—';
+    return {
+      accent,
+      tabs: TABS.map(([id, label]) => ({ label, n: id === 'all' ? DATA.length : DATA.filter((x) => x.st === id).length, on: s.tab === id, style: s.tab === id ? tab + 'background: #0E100F; color: #F2F2EE; border: 0; font-weight: 600' : tab + 'background: #FFFFFF; color: #0E100F; border: 1.5px solid #C9CAC2', pick: () => this.setState({ tab: id }) })),
+      list: filtered.map((r) => ({ ...r, status: ST[r.st].label, badge: ST[r.st].badge, style: rowBase + (r.i === s.sel ? 'background: #FDF3C4; box-shadow: inset 4px 0 0 ' + accent : 'background: #FFFFFF'), pick: () => this.setState({ sel: r.i }) })),
+      d: { ...d, status: ST[d.st].label, badge: ST[d.st].badge },
+      shots: ['Depan', 'Belakang', 'Kiri', 'Kanan'].map((side) => {
+        const changed = d.newBad.length && side === 'Kiri';
+        return {
+          side,
+          outLabel: !outDone ? 'Belum check out' : changed ? 'Keluar · ada perbedaan' : 'Keluar · sama',
+          outStyle: 'height: 30px; border-radius: 8px; display: flex; align-items: center; justify-content: center; ' + (!outDone ? 'border: 1.5px dashed #C9CAC2; color: #6B706A' : changed ? 'background: #FBEDE6; color: #A3440B; font-weight: 600' : 'background: #EEEEE8; color: #3E433E')
+        };
+      }),
+      checks: PARTS.map((p) => {
+        const wasBad = d.bad.includes(p), isNew = d.newBad.includes(p);
+        return {
+          part: p,
+          inn: wasBad ? 'Rusak' : 'Baik', inStyle: wasBad ? bad : ok,
+          out: !outDone ? '—' : (wasBad || isNew) ? (isNew ? 'Rusak · baru' : 'Rusak') : 'Baik',
+          outStyle: !outDone ? dash : (wasBad || isNew) ? bad : ok,
+          bg: isNew ? '#FFF8F4' : '#FFFFFF'
+        };
+      })
+    };
+  }
+}
+</script>
+</body>
+</html>

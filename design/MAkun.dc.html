@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<title>Ceklis — Akun petugas</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&amp;family=IBM+Plex+Sans:wght@400;500;600&amp;family=JetBrains+Mono:wght@500;700&amp;display=swap">
+<style>
+body{margin:0}
+*{box-sizing:border-box}
+a{color:inherit;text-decoration:none}
+button{font-family:inherit;cursor:pointer}
+.row:active{background:#F7F7F3}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; overflow: hidden; display: flex; flex-direction: column; background: #F2F2EE; color: #0E100F; font-family: 'IBM Plex Sans', system-ui, sans-serif">
+  <header style="background: #0E100F; color: #F2F2EE; padding: 48px 20px 22px; display: flex; align-items: center; gap: 14px">
+    <span aria-hidden="true" style="width: 60px; height: 60px; border-radius: 50%; background: {{accent}}; color: #0E100F; display: flex; align-items: center; justify-content: center; font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 24px">B</span>
+    <div style="display: flex; flex-direction: column; gap: 2px">
+      <strong style="font-family: 'Space Grotesk', sans-serif; font-size: 22px">Budi Santoso</strong>
+      <span style="font-size: 13px; color: #A3A8A3">Petugas valet · ID PTG-0214</span>
+    </div>
+  </header>
+
+  <main style="flex: 1; overflow-y: auto; padding: 16px 20px 20px; display: flex; flex-direction: column; gap: 16px">
+    <!-- assignment -->
+    <section style="background: #FFFFFF; border: 1px solid #DCDDD6; border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 12px">
+      <h2 style="margin: 0; font-size: 13px; font-weight: 600; color: #50554F; text-transform: uppercase; letter-spacing: 0.05em">Tugas hari ini</h2>
+      <div style="display: flex; flex-direction: column; gap: 2px">
+        <strong style="font-size: 17px">Pakuwon Mall Surabaya · Lobby 2</strong>
+        <span style="font-size: 14px; color: #50554F">Shift pagi · 07.00–15.00</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 10px; background: #F7F7F3; border-radius: 10px; padding: 10px 12px">
+        <span aria-hidden="true" style="width: 32px; height: 32px; border-radius: 50%; background: #0E100F; color: #F2F2EE; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600">H</span>
+        <span style="flex: 1; display: flex; flex-direction: column"><span style="font-size: 14px; font-weight: 600">Hendra</span><span style="font-size: 12px; color: #50554F">Supervisor</span></span>
+        <a href="#" aria-label="Telepon supervisor" style="width: 44px; height: 44px; border-radius: 10px; background: {{accent}}; display: flex; align-items: center; justify-content: center"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0E100F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"/></svg></a>
+      </div>
+      <span style="font-size: 12px; color: #50554F">Pos tugas diatur admin. Minta supervisor kalau perlu pindah pos.</span>
+    </section>
+
+    <!-- sync -->
+    <section style="background: #0E100F; color: #F2F2EE; border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 10px">
+      <div style="display: flex; align-items: center; gap: 10px">
+        <span aria-hidden="true" style="width: 10px; height: 10px; border-radius: 50%; background: {{syncDot}}"></span>
+        <strong style="flex: 1; font-size: 15px">{{syncTitle}}</strong>
+        <button onClick="{{sync}}" style="min-height: 40px; padding: 0 14px; border-radius: 10px; border: 0; background: {{accent}}; color: #0E100F; font-weight: 700; font-size: 13px">Kirim sekarang</button>
+      </div>
+      <span style="font-size: 13px; line-height: 1.5; color: #A3A8A3">{{syncText}}</span>
+    </section>
+
+    <!-- settings -->
+    <section style="background: #FFFFFF; border: 1px solid #DCDDD6; border-radius: 16px; overflow: hidden">
+      <label class="row" style="display: flex; align-items: center; gap: 12px; padding: 0 16px; min-height: 56px; cursor: pointer">
+        <span style="flex: 1; font-size: 15px">Notifikasi kendaraan diminta</span>
+        <input type="checkbox" checked style="width: 22px; height: 22px; accent-color: #0E100F">
+      </label>
+      <label class="row" style="display: flex; align-items: center; gap: 12px; padding: 0 16px; min-height: 56px; border-top: 1px solid #EEEEE8; cursor: pointer">
+        <span style="flex: 1; font-size: 15px">Kompres foto (hemat kuota)</span>
+        <input type="checkbox" checked style="width: 22px; height: 22px; accent-color: #0E100F">
+      </label>
+      <a class="row" href="#" style="display: flex; align-items: center; gap: 12px; padding: 0 16px; min-height: 56px; border-top: 1px solid #EEEEE8">
+        <span style="flex: 1; font-size: 15px">Ganti PIN</span>
+        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#50554F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+      </a>
+      <a class="row" href="#" style="display: flex; align-items: center; gap: 12px; padding: 0 16px; min-height: 56px; border-top: 1px solid #EEEEE8">
+        <span style="flex: 1; font-size: 15px">Panduan foto &amp; checklist</span>
+        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#50554F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+      </a>
+    </section>
+
+    <a href="Main.dc.html" style="min-height: 52px; border-radius: 14px; border: 1.5px solid #C2410C; color: #A3440B; font-weight: 600; font-size: 15px; display: flex; align-items: center; justify-content: center">Keluar dari akun</a>
+    <span style="text-align: center; font-size: 12px; color: #6B706A">ceklis · versi [x.y.z]</span>
+  </main>
+
+  <nav aria-label="Menu" style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); background: #FFFFFF; border-top: 1px solid #DCDDD6; padding: 6px 8px 22px">
+    <a href="MHome.dc.html" style="display: flex; flex-direction: column; align-items: center; gap: 3px; min-height: 52px; justify-content: center; font-size: 11px; color: #50554F">
+      <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11l8-7 8 7v9H4z"/></svg>Beranda</a>
+    <a href="MAktif.dc.html" style="display: flex; flex-direction: column; align-items: center; gap: 3px; min-height: 52px; justify-content: center; font-size: 11px; color: #50554F">
+      <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 17h14l-1.5-6a2 2 0 0 0-2-1.5h-7a2 2 0 0 0-2 1.5z"/><circle cx="7.5" cy="17.5" r="1.5"/><circle cx="16.5" cy="17.5" r="1.5"/></svg>Aktif</a>
+    <a href="MRiwayat.dc.html" style="display: flex; flex-direction: column; align-items: center; gap: 3px; min-height: 52px; justify-content: center; font-size: 11px; color: #50554F">
+      <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>Riwayat</a>
+    <a href="MAkun.dc.html" aria-current="page" style="display: flex; flex-direction: column; align-items: center; gap: 3px; min-height: 52px; justify-content: center; font-size: 11px; font-weight: 600">
+      <span style="width: 48px; height: 28px; border-radius: 999px; background: {{accent}}; display: flex; align-items: center; justify-content: center"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0E100F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg></span>Akun</a>
+  </nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#F5C518","options":["#F5C518","#FF8A1F","#B8F53A"]},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { pending: 2 };
+  }
+  renderVals() {
+    const accent = this.props.accent ?? '#F5C518';
+    const p = this.state.pending;
+    return {
+      accent,
+      syncDot: p ? accent : '#3CCB7F',
+      syncTitle: p ? p + ' data belum terkirim' : 'Semua data terkirim',
+      syncText: p ? 'Sinyal lemah di basement. Data tersimpan aman di HP dan dikirim otomatis saat online.' : 'Terakhir sinkron baru saja.',
+      sync: () => this.setState({ pending: 0 })
+    };
+  }
+}
+</script>
+</body>
+</html>

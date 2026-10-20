@@ -1,0 +1,306 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<title>Ceklis — Check In kendaraan</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&amp;family=IBM+Plex+Sans:wght@400;500;600&amp;family=JetBrains+Mono:wght@500;700&amp;display=swap">
+<style>
+body{margin:0}
+*{box-sizing:border-box}
+a{color:inherit;text-decoration:none}
+input:focus,textarea:focus{outline:2px solid #0E100F;outline-offset:1px}
+button{font-family:inherit;cursor:pointer}
+.btn:active{transform:scale(.98)}
+.scan{position:absolute;left:12px;right:12px;height:2px;background:#F5C518;box-shadow:0 0 14px 3px rgba(245,197,24,.6);animation:scan 2.4s ease-in-out infinite}
+@keyframes scan{0%{top:14%}50%{top:84%}100%{top:14%}}
+@media (prefers-reduced-motion:reduce){.scan{animation:none;top:50%}}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; overflow: hidden; display: flex; flex-direction: column; background: #F2F2EE; color: #0E100F; font-family: 'IBM Plex Sans', system-ui, sans-serif">
+  <!-- header -->
+  <header style="background: #0E100F; color: #F2F2EE; padding: 48px 20px 16px; display: flex; flex-direction: column; gap: 14px">
+    <div style="display: flex; align-items: center; gap: 12px">
+      <a href="MHome.dc.html" aria-label="Tutup" style="width: 44px; height: 44px; border-radius: 12px; background: #1A1D1B; display: flex; align-items: center; justify-content: center">
+        <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </a>
+      <div style="flex: 1; display: flex; flex-direction: column">
+        <span style="font-size: 12px; color: #A3A8A3">Check In · Lobby 2 · langkah {{step}} dari 4</span>
+        <span style="font-family: 'Space Grotesk', sans-serif; font-size: 20px; font-weight: 700">{{stepTitle}}</span>
+      </div>
+      <sc-if value="{{hasPlate}}" hint-placeholder-val="{{ false }}">
+        <span style="background: #F4F4F0; color: #0E100F; border: 2px solid {{accent}}; border-radius: 4px; padding: 2px 6px; font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 12px; white-space: nowrap">{{plate}}</span>
+      </sc-if>
+    </div>
+    <div aria-hidden="true" style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px">
+      <sc-for list="{{bars}}" as="b" hint-placeholder-count="4"><span style="height: 5px; border-radius: 3px; background: {{b.c}}"></span></sc-for>
+    </div>
+  </header>
+
+  <main style="flex: 1; overflow-y: auto; padding: 18px 20px 24px; display: flex; flex-direction: column; gap: 18px">
+
+    <!-- STEP 1: data kendaraan -->
+    <sc-if value="{{s1}}" hint-placeholder-val="{{ true }}">
+      <div style="display: flex; flex-direction: column; gap: 18px">
+        <div style="position: relative; height: 170px; border-radius: 16px; background: #161917; background-image: linear-gradient(#1D201E 1px, transparent 1px), linear-gradient(90deg, #1D201E 1px, transparent 1px); background-size: 24px 24px; overflow: hidden; display: flex; align-items: center; justify-content: center">
+          <span aria-hidden="true" style="position: absolute; left: 12px; top: 12px; width: 22px; height: 22px; border-left: 3px solid {{accent}}; border-top: 3px solid {{accent}}"></span>
+          <span aria-hidden="true" style="position: absolute; right: 12px; top: 12px; width: 22px; height: 22px; border-right: 3px solid {{accent}}; border-top: 3px solid {{accent}}"></span>
+          <span aria-hidden="true" style="position: absolute; left: 12px; bottom: 12px; width: 22px; height: 22px; border-left: 3px solid {{accent}}; border-bottom: 3px solid {{accent}}"></span>
+          <span aria-hidden="true" style="position: absolute; right: 12px; bottom: 12px; width: 22px; height: 22px; border-right: 3px solid {{accent}}; border-bottom: 3px solid {{accent}}"></span>
+          <sc-if value="{{notScanned}}" hint-placeholder-val="{{ true }}">
+            <div class="scan" aria-hidden="true"></div>
+            <button onClick="{{scan}}" style="position: relative; z-index: 1; background: {{accent}}; color: #0E100F; border: 0; border-radius: 12px; min-height: 52px; padding: 0 20px; font-weight: 700; font-size: 16px; display: flex; align-items: center; gap: 10px">
+              <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3"/><rect x="7" y="10" width="10" height="4" rx="1"/></svg>
+              Scan plat
+            </button>
+          </sc-if>
+          <sc-if value="{{scanned}}" hint-placeholder-val="{{ false }}">
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 10px">
+              <span style="background: #F4F4F0; border: 2px solid #111; border-radius: 4px; padding: 6px 16px; font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 26px; outline: 2px solid {{accent}}; outline-offset: 5px">B 1234 ABC</span>
+              <span style="font-size: 12px; color: #C9CCC6">Terbaca otomatis · 0.97</span>
+            </div>
+          </sc-if>
+        </div>
+        <label style="display: flex; flex-direction: column; gap: 8px; font-size: 14px; font-weight: 600">Nomor polisi
+          <input value="{{plate}}" onInput="{{typePlate}}" placeholder="B 1234 ABC" style="min-height: 56px; border: 1.5px solid #C9CAC2; border-radius: 12px; padding: 0 16px; font-family: 'JetBrains Mono', monospace; font-size: 20px; font-weight: 700; text-transform: uppercase; background: #FFFFFF">
+        </label>
+        <fieldset style="border: 0; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px">
+          <legend style="font-size: 14px; font-weight: 600; margin-bottom: 8px">Jenis</legend>
+          <div style="display: flex; flex-wrap: wrap; gap: 8px">
+            <sc-for list="{{types}}" as="t" hint-placeholder-count="4"><button onClick="{{t.pick}}" aria-pressed="{{t.on}}" style="{{t.style}}">{{t.label}}</button></sc-for>
+          </div>
+        </fieldset>
+        <fieldset style="border: 0; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px">
+          <legend style="font-size: 14px; font-weight: 600; margin-bottom: 8px">Warna</legend>
+          <div style="display: flex; flex-wrap: wrap; gap: 8px">
+            <sc-for list="{{colors}}" as="c" hint-placeholder-count="6"><button onClick="{{c.pick}}" aria-pressed="{{c.on}}" style="{{c.style}}"><span aria-hidden="true" style="width: 16px; height: 16px; border-radius: 50%; border: 1px solid #9A9F99; background: {{c.hex}}"></span>{{c.label}}</button></sc-for>
+          </div>
+        </fieldset>
+        <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px">
+          <label style="display: flex; flex-direction: column; gap: 8px; font-size: 14px; font-weight: 600">Merek / model
+            <input placeholder="Toyota Fortuner" style="min-height: 52px; border: 1.5px solid #C9CAC2; border-radius: 12px; padding: 0 14px; font-family: inherit; font-size: 16px; font-weight: 400; background: #FFFFFF">
+          </label>
+          <label style="display: flex; flex-direction: column; gap: 8px; font-size: 14px; font-weight: 600">Slot parkir
+            <input placeholder="B2-14" style="min-height: 52px; border: 1.5px solid #C9CAC2; border-radius: 12px; padding: 0 14px; font-family: 'JetBrains Mono', monospace; font-size: 16px; background: #FFFFFF">
+          </label>
+        </div>
+        <label style="display: flex; flex-direction: column; gap: 8px; font-size: 14px; font-weight: 600">No. gantungan kunci
+          <input placeholder="K-027" style="min-height: 52px; border: 1.5px solid #C9CAC2; border-radius: 12px; padding: 0 14px; font-family: 'JetBrains Mono', monospace; font-size: 16px; background: #FFFFFF">
+        </label>
+      </div>
+    </sc-if>
+
+    <!-- STEP 2: foto -->
+    <sc-if value="{{s2}}" hint-placeholder-val="{{ false }}">
+      <div style="display: flex; flex-direction: column; gap: 16px">
+        <p style="margin: 0; font-size: 14px; line-height: 1.5; color: #50554F">Foto 4 sisi wajib. Kerusakan yang sudah ada difoto close-up sebelum kendaraan diparkir.</p>
+        <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px">
+          <sc-for list="{{photos}}" as="p" hint-placeholder-count="4">
+            <button onClick="{{p.toggle}}" aria-label="Foto {{p.label}}" style="{{p.style}}">
+              <svg aria-hidden="true" width="56" height="34" viewBox="0 0 56 34" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 24h48v-6l-6-2-6-8H18l-7 8-7 2z"/><circle cx="15" cy="25" r="4"/><circle cx="41" cy="25" r="4"/></svg>
+              <span style="font-weight: 600; font-size: 15px">{{p.label}}</span>
+              <span style="font-size: 12px">{{p.sub}}</span>
+            </button>
+          </sc-for>
+        </div>
+        <button style="min-height: 52px; border: 2px dashed #9A9F99; border-radius: 14px; background: transparent; color: #0E100F; font-weight: 600; font-size: 15px; display: flex; align-items: center; justify-content: center; gap: 8px">
+          <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Foto kerusakan yang sudah ada
+        </button>
+        <span style="font-size: 13px; color: #50554F; text-align: center">{{photoCount}} dari 4 foto wajib</span>
+      </div>
+    </sc-if>
+
+    <!-- STEP 3: checklist -->
+    <sc-if value="{{s3}}" hint-placeholder-val="{{ false }}">
+      <div style="display: flex; flex-direction: column; gap: 18px">
+        <p style="margin: 0; font-size: 14px; line-height: 1.5; color: #50554F">Ketuk untuk ceklis kalau kondisinya baik. Yang tidak diceklis wajib difoto dan diberi catatan. <span style="font-family: 'JetBrains Mono', monospace; font-weight: 700; color: #0E100F">{{goodCount}}/{{totalOuter}}</span></p>
+        <sc-for list="{{groups}}" as="g" hint-placeholder-count="4">
+          <section style="display: flex; flex-direction: column; gap: 8px">
+            <div style="display: flex; justify-content: space-between; align-items: center">
+              <h2 style="margin: 0; font-family: 'Space Grotesk', sans-serif; font-size: 17px">{{g.title}}</h2>
+              <button onClick="{{g.all}}" style="min-height: 40px; padding: 0 12px; border-radius: 999px; border: 1.5px solid #0E100F; background: #FFFFFF; font-size: 13px; font-weight: 600">Ceklis semua</button>
+            </div>
+            <div style="background: #FFFFFF; border: 1px solid #DCDDD6; border-radius: 14px; overflow: hidden">
+              <sc-for list="{{g.items}}" as="it" hint-placeholder-count="4">
+                <button onClick="{{it.toggle}}" aria-pressed="{{it.on}}" style="width: 100%; display: flex; align-items: center; gap: 14px; padding: 0 16px; min-height: 56px; border: 0; border-top: {{it.border}}; background: #FFFFFF; text-align: left; font-size: 16px; color: #0E100F">
+                  <span aria-hidden="true" style="{{it.box}}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0E100F" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" style="opacity: {{it.tick}}"><path d="M5 12l4.5 4.5L19 7"/></svg></span>
+                  <span style="flex: 1; font-weight: {{it.weight}}">{{it.label}}</span>
+                </button>
+              </sc-for>
+            </div>
+          </section>
+        </sc-for>
+        <section style="display: flex; flex-direction: column; gap: 8px">
+          <h2 style="margin: 0; font-family: 'Space Grotesk', sans-serif; font-size: 18px">Barang di dalam</h2>
+          <span style="font-size: 13px; color: #50554F">Centang yang ada di kendaraan.</span>
+          <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px">
+            <sc-for list="{{inner}}" as="b" hint-placeholder-count="5">
+              <button onClick="{{b.toggle}}" aria-pressed="{{b.on}}" style="{{b.style}}">
+                <span aria-hidden="true" style="{{b.box}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0E100F" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" style="opacity: {{b.tick}}"><path d="M5 12l4.5 4.5L19 7"/></svg></span>{{b.label}}
+              </button>
+            </sc-for>
+          </div>
+        </section>
+        <label style="display: flex; flex-direction: column; gap: 8px; font-size: 14px; font-weight: 600">Catatan
+          <textarea rows="3" value="{{note}}" onInput="{{typeNote}}" placeholder="mis. lecet kecil di bamper belakang kiri, sudah ada sebelumnya" style="border: 1.5px solid #C9CAC2; border-radius: 12px; padding: 12px 14px; font-family: inherit; font-size: 15px; font-weight: 400; resize: none; background: #FFFFFF"></textarea>
+        </label>
+        <section aria-label="Ringkasan checklist" style="background: #0E100F; color: #F2F2EE; border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 12px">
+          <div style="display: flex; justify-content: space-between; align-items: center"><h2 style="margin: 0; font-family: 'Space Grotesk', sans-serif; font-size: 16px">Ringkasan otomatis</h2><span style="font-size: 12px; color: #A3A8A3">untuk dikirim ke pemilik</span></div>
+          <div style="background: #1A1D1B; border: 1px solid #2A2E2B; border-radius: 12px; padding: 14px; font-family: 'JetBrains Mono', monospace; font-size: 13px; line-height: 1.75">
+            <div style="font-weight: 700; color: {{accent}}">CHECKLIST VALET</div>
+            <div>Nomor polisi: {{plateShown}}</div>
+            <sc-for list="{{summary}}" as="l" hint-placeholder-count="9"><div>{{l.k}}: <span style="color: {{l.c}}">{{l.v}}</span></div></sc-for>
+            <div>Barang: {{innerList}}</div>
+            <div>Catatan: {{noteShown}}</div>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px">
+            <button style="min-height: 46px; border-radius: 12px; border: 1px solid #343935; background: transparent; color: #F2F2EE; font-weight: 600; font-size: 14px">Salin teks</button>
+            <button style="min-height: 46px; border-radius: 12px; border: 0; background: {{accent}}; color: #0E100F; font-weight: 700; font-size: 14px">Kirim WhatsApp</button>
+          </div>
+        </section>
+      </div>
+    </sc-if>
+
+    <!-- STEP 4: selesai -->
+    <sc-if value="{{s4}}" hint-placeholder-val="{{ false }}">
+      <div style="display: flex; flex-direction: column; gap: 16px">
+        <div style="background: #0E100F; color: #F2F2EE; border-radius: 18px; padding: 20px; display: flex; flex-direction: column; align-items: center; gap: 12px; text-align: center">
+          <span style="font-size: 13px; color: #A3A8A3">Tiket cek list untuk pemilik</span>
+          <div role="img" aria-label="QR tiket" style="width: 168px; height: 168px; border-radius: 12px; background: #FFFFFF; padding: 12px; display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 3px">
+            <sc-for list="{{qr}}" as="q" hint-placeholder-count="49"><span style="background: {{q.c}}; border-radius: 2px"></span></sc-for>
+          </div>
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 18px; font-weight: 700; color: {{accent}}">CKL-2310-0142</span>
+        </div>
+        <dl style="margin: 0; background: #FFFFFF; border: 1px solid #DCDDD6; border-radius: 14px; padding: 6px 16px">
+          <div style="display: flex; justify-content: space-between; padding: 10px 0"><dt style="color: #50554F; font-size: 14px">Nomor polisi</dt><dd style="margin: 0; font-family: 'JetBrains Mono', monospace; font-weight: 700">{{plateShown}}</dd></div>
+          <div style="display: flex; justify-content: space-between; padding: 10px 0; border-top: 1px solid #EEEEE8"><dt style="color: #50554F; font-size: 14px">Foto</dt><dd style="margin: 0; font-weight: 600">{{photoCount}} / 4</dd></div>
+          <div style="display: flex; justify-content: space-between; padding: 10px 0; border-top: 1px solid #EEEEE8"><dt style="color: #50554F; font-size: 14px">Bagian luar</dt><dd style="margin: 0; font-weight: 600">{{goodCount}} baik · {{badCount}} perlu dicek</dd></div>
+          <div style="display: flex; justify-content: space-between; gap: 12px; padding: 10px 0; border-top: 1px solid #EEEEE8"><dt style="color: #50554F; font-size: 14px">Barang di dalam</dt><dd style="margin: 0; font-weight: 600; text-align: right">{{innerList}}</dd></div>
+          <div style="display: flex; justify-content: space-between; padding: 10px 0; border-top: 1px solid #EEEEE8"><dt style="color: #50554F; font-size: 14px">Waktu masuk</dt><dd style="margin: 0; font-weight: 600">12.41 · oleh Budi</dd></div>
+        </dl>
+        <button style="min-height: 52px; border: 1.5px solid #0E100F; border-radius: 14px; background: #FFFFFF; font-weight: 600; font-size: 15px; display: flex; align-items: center; justify-content: center; gap: 8px">
+          <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20l1.5-4.5A8 8 0 1 1 9 19z"/></svg>Kirim tiket cek list via WhatsApp
+        </button>
+      </div>
+    </sc-if>
+  </main>
+
+  <!-- footer -->
+  <footer style="background: #FFFFFF; border-top: 1px solid #DCDDD6; padding: 12px 20px 26px; display: flex; gap: 10px">
+    <sc-if value="{{canBack}}" hint-placeholder-val="{{ false }}">
+      <button onClick="{{back}}" style="min-height: 56px; padding: 0 20px; border-radius: 14px; border: 1.5px solid #C9CAC2; background: #FFFFFF; font-weight: 600; font-size: 16px">Kembali</button>
+    </sc-if>
+    <sc-if value="{{notLast}}" hint-placeholder-val="{{ true }}">
+      <button class="btn" onClick="{{next}}" style="flex: 1; min-height: 56px; border-radius: 14px; border: 0; background: {{accent}}; color: #0E100F; font-weight: 700; font-size: 17px">{{nextLabel}}</button>
+    </sc-if>
+    <sc-if value="{{isLast}}" hint-placeholder-val="{{ false }}">
+      <a class="btn" href="MHome.dc.html" style="flex: 1; min-height: 56px; border-radius: 14px; background: #0E100F; color: #F2F2EE; font-weight: 700; font-size: 17px; display: flex; align-items: center; justify-content: center">Selesai, simpan</a>
+    </sc-if>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#F5C518","options":["#F5C518","#FF8A1F","#B8F53A"]},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = {
+      step: 1, plate: '', type: 'SUV / MPV', color: 'Hitam',
+      photos: { Depan: false, Belakang: false, Kiri: false, Kanan: false },
+      outer: {}, inner: { 'Kartu e-Toll': true, 'HP': false, 'Uang': false, 'Laptop': false, 'DLL': false }
+    };
+  }
+  renderVals() {
+    const accent = this.props.accent ?? '#F5C518';
+    const s = this.state;
+    const titles = ['Data kendaraan', 'Foto kondisi awal', 'Checklist', 'Tiket cek list'];
+    const chip = 'min-height: 44px; padding: 0 14px; border-radius: 999px; font-size: 14px; display: inline-flex; align-items: center; gap: 8px; ';
+    const chipOff = chip + 'background: #FFFFFF; border: 1.5px solid #C9CAC2; color: #0E100F';
+    const chipOn = chip + 'background: #0E100F; border: 1.5px solid #0E100F; color: #F2F2EE; font-weight: 600';
+    const GROUPS = [
+      ['Tampak depan', ['Lampu depan kanan', 'Lampu depan kiri', 'Bamper depan', 'Kap mesin']],
+      ['Tampak samping', ['Pintu depan kanan', 'Pintu belakang kanan', 'Pintu depan kiri', 'Pintu belakang kiri']],
+      ['Tampak belakang', ['Pintu bagasi', 'Lampu belakang kanan', 'Lampu belakang kiri', 'Bamper belakang']],
+      ['Lainnya', ['Kaca depan & belakang', 'Velg & ban', 'Interior', 'Aksesori kendaraan']]
+    ];
+    const OUTER = GROUPS.flatMap((g) => g[1]);
+    const isOn = (k) => !!s.outer[k];
+    const boxOn = 'width: 30px; height: 30px; border-radius: 8px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; background: ' + accent + '; border: 2px solid #0E100F';
+    const boxOff = 'width: 30px; height: 30px; border-radius: 8px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; background: #FFFFFF; border: 2px solid #9A9F99';
+    const groups = GROUPS.map(([title, items]) => ({
+      title,
+      all: () => { const n = { ...this.state.outer }; items.forEach((k) => { n[k] = true; }); this.setState({ outer: n }); },
+      items: items.map((label, i) => ({
+        label, on: isOn(label), border: i === 0 ? '0' : '1px solid #EEEEE8',
+        box: isOn(label) ? boxOn : boxOff, tick: isOn(label) ? 1 : 0, weight: isOn(label) ? 600 : 400,
+        toggle: () => this.setState({ outer: { ...this.state.outer, [label]: !this.state.outer[label] } })
+      }))
+    }));
+    const badCount = OUTER.filter((k) => !isOn(k)).length;
+    const photoKeys = ['Depan', 'Belakang', 'Kiri', 'Kanan'];
+    const tile = 'min-height: 128px; border-radius: 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; ';
+    const photos = photoKeys.map((k) => ({
+      label: k,
+      sub: s.photos[k] ? 'Terfoto 12.41 · ulangi' : 'Ketuk untuk foto',
+      style: s.photos[k] ? tile + 'background: #0E100F; color: ' + accent + '; border: 2px solid #0E100F' : tile + 'background: #FFFFFF; color: #50554F; border: 2px dashed #9A9F99',
+      toggle: () => this.setState({ photos: { ...this.state.photos, [k]: !this.state.photos[k] } })
+    }));
+    const photoCount = photoKeys.filter((k) => s.photos[k]).length;
+    const innerKeys = ['Kartu e-Toll', 'Uang', 'Laptop', 'HP', 'DLL'];
+    const ib = 'min-height: 52px; border-radius: 12px; padding: 0 14px; display: flex; align-items: center; gap: 10px; font-size: 15px; text-align: left; ';
+    const inner = innerKeys.map((k) => {
+      const on = !!s.inner[k];
+      return {
+        label: k, on,
+        style: on ? ib + 'background: #FFFFFF; border: 2px solid #0E100F; font-weight: 600' : ib + 'background: #FFFFFF; border: 1.5px solid #C9CAC2',
+        box: 'width: 22px; height: 22px; border-radius: 6px; display: flex; align-items: center; justify-content: center; ' + (on ? 'background: ' + accent + '; border: 2px solid #0E100F' : 'background: #FFFFFF; border: 2px solid #9A9F99'),
+        tick: on ? 1 : 0,
+        toggle: () => this.setState({ inner: { ...this.state.inner, [k]: !this.state.inner[k] } })
+      };
+    });
+    const innerOn = innerKeys.filter((k) => s.inner[k]);
+    const qrPattern = '1110111100010110101111011001010110111010111011101';
+    return {
+      accent,
+      step: s.step,
+      stepTitle: titles[s.step - 1],
+      bars: [1, 2, 3, 4].map((n) => ({ c: n <= s.step ? accent : '#2A2E2B' })),
+      s1: s.step === 1, s2: s.step === 2, s3: s.step === 3, s4: s.step === 4,
+      plate: s.plate, hasPlate: s.plate.length > 0 && s.step > 1,
+      plateShown: s.plate || 'B 1234 ABC',
+      scanned: s.plate === 'B 1234 ABC', notScanned: s.plate !== 'B 1234 ABC',
+      scan: () => this.setState({ plate: 'B 1234 ABC' }),
+      typePlate: (e) => this.setState({ plate: e.target.value.toUpperCase() }),
+      types: ['Sedan', 'SUV / MPV', 'Hatchback', 'Lainnya'].map((t) => ({ label: t, on: s.type === t, style: s.type === t ? chipOn : chipOff, pick: () => this.setState({ type: t }) })),
+      colors: [['Hitam', '#111111'], ['Putih', '#FFFFFF'], ['Silver', '#C8CBCF'], ['Abu-abu', '#6B6F73'], ['Merah', '#B91C1C'], ['Biru', '#1E40AF']].map(([l, h]) => ({ label: l, hex: h, on: s.color === l, style: s.color === l ? chipOn : chipOff, pick: () => this.setState({ color: l }) })),
+      photos, photoCount,
+      groups, badCount, goodCount: OUTER.length - badCount, totalOuter: OUTER.length,
+      note: s.note || '', typeNote: (e) => this.setState({ note: e.target.value }), noteShown: s.note || '-',
+      summary: [
+        ['Bodi depan', ['Bamper depan', 'Kap mesin']],
+        ['Bodi belakang', ['Pintu bagasi', 'Bamper belakang']],
+        ['Bodi kiri', ['Pintu depan kiri', 'Pintu belakang kiri']],
+        ['Bodi kanan', ['Pintu depan kanan', 'Pintu belakang kanan']],
+        ['Kaca depan dan belakang', ['Kaca depan & belakang']],
+        ['Lampu', ['Lampu depan kanan', 'Lampu depan kiri', 'Lampu belakang kanan', 'Lampu belakang kiri']],
+        ['Velg dan ban', ['Velg & ban']],
+        ['Interior', ['Interior']],
+        ['Aksesori kendaraan', ['Aksesori kendaraan']]
+      ].map(([k, parts]) => { const miss = parts.filter((p) => !isOn(p)); return { k, v: miss.length ? 'Perlu dicek (' + miss.join(', ').toLowerCase() + ')' : 'Baik', c: miss.length ? '#F9C4AA' : '#F2F2EE' }; }),
+      inner, innerList: innerOn.length ? innerOn.join(', ') : 'Tidak ada',
+      qr: qrPattern.split('').map((c) => ({ c: c === '1' ? '#0E100F' : '#FFFFFF' })),
+      canBack: s.step > 1,
+      notLast: s.step < 4, isLast: s.step === 4,
+      nextLabel: s.step === 3 ? 'Simpan check in' : 'Lanjut',
+      next: () => this.setState({ step: Math.min(4, s.step + 1), plate: s.plate || 'B 1234 ABC' }),
+      back: () => this.setState({ step: Math.max(1, s.step - 1) })
+    };
+  }
+}
+</script>
+</body>
+</html>
