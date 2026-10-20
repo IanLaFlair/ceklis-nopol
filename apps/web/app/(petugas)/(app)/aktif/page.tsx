@@ -49,12 +49,12 @@ export default function AktifPage() {
             </div>
             <span className="font-display text-3xl font-bold text-accent">{items.length}</span>
           </div>
-          <label className="flex min-h-[50px] items-center gap-2.5 rounded-xl border border-ink-3 bg-ink-2 px-3.5">
-            <Search size={18} className="text-on-ink-muted" />
+          <label className="flex min-h-[52px] items-center gap-2.5 rounded-xl border-[1.5px] border-field bg-surface px-3.5 text-ink">
+            <Search size={18} className="text-muted" />
             <span className="sr-only">Cari plat nomor</span>
             <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Cari plat nomor"
               type="search" autoComplete="off" autoCorrect="off" autoCapitalize="characters" spellCheck={false}
-              className="field-on-dark min-w-0 flex-1 bg-transparent text-on-ink outline-none placeholder:text-on-ink-muted" />
+              className="min-w-0 flex-1 bg-transparent text-ink outline-none placeholder:text-muted" />
           </label>
         </div>
       }
