@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import useSWR from "swr";
-import { PendingPill, Screen } from "@/components/petugas/shell";
+import { Screen } from "@/components/petugas/shell";
 import { useSession } from "@/components/petugas/session";
 import { VehicleRow } from "@/components/petugas/vehicle-row";
 import { ChevronDown, Exit, Plus, Search } from "@/components/icons";
@@ -62,7 +62,6 @@ export default function Beranda() {
                 className="flex size-11 items-center justify-center rounded-full bg-ink-3 font-semibold">
                 {initial(user.name)}
               </Link>
-              <PendingPill />
             </div>
           </div>
           <div className="grid grid-cols-3 gap-2">

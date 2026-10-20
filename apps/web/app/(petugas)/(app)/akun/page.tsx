@@ -1,57 +1,27 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Screen } from "@/components/petugas/shell";
 import { useSession } from "@/components/petugas/session";
 import { ChevronRight, Phone } from "@/components/icons";
-import { btnPrimary, ErrorNote, field, Spinner } from "@/components/ui";
+import { btnPrimary, ErrorNote, field } from "@/components/ui";
 import { api } from "@/lib/api/client";
 import { initial, ROLE_LABEL } from "@/lib/format";
-import { useOnline } from "@/lib/offline/hooks";
-import { discardOutbox } from "@/lib/offline/queue";
 import { syncNow } from "@/lib/offline/sync";
 
 const VERSION = process.env.NEXT_PUBLIC_APP_VERSION ?? "0.1.0";
 
-function useLocalToggle(key: string, def = true) {
-  const [on, setOn] = useState(def);
-  useEffect(() => {
-    try {
-      const v = localStorage.getItem(key);
-      if (v !== null) setOn(v === "1");
-    } catch {}
-  }, [key]);
-  return [on, (v: boolean) => {
-    setOn(v);
-    try {
-      localStorage.setItem(key, v ? "1" : "0");
-    } catch {}
-  }] as const;
-}
-
 export default function AkunPage() {
   const router = useRouter();
   const { user, assignment, pending } = useSession();
-  const online = useOnline();
   const active = assignment.active!;
-  const [syncing, setSyncing] = useState(false);
-  const [syncMsg, setSyncMsg] = useState<string | null>(null);
-  const [notif, setNotif] = useLocalToggle("ceklis:notif");
-  const [compress, setCompress] = useLocalToggle("ceklis:compress");
   const [pinOpen, setPinOpen] = useState(false);
-  const [guideOpen, setGuideOpen] = useState(false);
   const [confirmLogout, setConfirmLogout] = useState(false);
 
   async function sync() {
-    setSyncing(true);
-    setSyncMsg(null);
     const r = await syncNow(user.id).catch(() => null);
-    setSyncing(false);
-    if (!r) return;
-    if (r.stoppedBy === "offline") setSyncMsg("Belum ada sinyal. Data akan dikirim otomatis.");
-    else if (r.stoppedBy === "auth") router.replace("/masuk?sesi=habis");
-    else setSyncMsg(r.failed ? `${r.failed} data ditolak server — lihat di bawah.` : "Semua data terkirim.");
+    if (r?.stoppedBy === "auth") router.replace("/masuk?sesi=habis");
   }
 
   async function logout(force = false) {
@@ -63,11 +33,6 @@ export default function AkunPage() {
     router.replace("/masuk");
   }
 
-  const dot = pending.errors.length ? "bg-danger" : pending.total ? "bg-accent" : "bg-[#4ADE80]";
-  const title = pending.total ? `${pending.data + pending.photos} data belum terkirim` : "Semua data terkirim";
-  const detail = pending.total
-    ? `${pending.data} transaksi · ${pending.photos} foto. ${online ? "Sedang dikirim." : "Dikirim otomatis saat ada sinyal."}`
-    : "Check in dan check out tersimpan di server.";
   const spv = assignment.supervisors[0];
 
   return (
@@ -100,52 +65,11 @@ export default function AkunPage() {
         <span className="text-xs text-muted">Pos tugas diatur admin. Minta supervisor kalau perlu pindah pos.</span>
       </section>
 
-      <section className="flex flex-col gap-2.5 rounded-2xl bg-ink p-4 text-on-ink">
-        <div className="flex items-center gap-2.5">
-          <span aria-hidden="true" className={`size-2.5 rounded-full ${dot}`} />
-          <strong className="flex-1 text-[15px]">{title}</strong>
-          <button onClick={sync} disabled={syncing} className="flex min-h-10 items-center gap-2 rounded-[10px] bg-accent px-3.5 text-[13px] font-bold text-ink">
-            {syncing && <Spinner />}Kirim sekarang
-          </button>
-        </div>
-        <span className="text-[13px] leading-normal text-on-ink-muted">{syncMsg ?? detail}</span>
-        {pending.errors.map((e) => (
-          <div key={e.id} className="flex flex-col gap-2 rounded-xl border border-ink-line bg-ink-2 p-3 text-[13px]">
-            <span>
-              <strong className="text-danger-soft">{e.kind === "checkin" ? "Check in" : "Check out"} ditolak:</strong> {e.last_error}
-            </span>
-            <span className="text-on-ink-muted">Data masih tersimpan di HP. Hubungi supervisor, atau hapus kalau memang salah input.</span>
-            <button onClick={() => window.confirm("Hapus data ini dari HP? Tidak bisa dibatalkan.") && discardOutbox(e.id!)}
-              className="min-h-10 self-start rounded-lg border border-[#F2A07B] px-3 font-semibold text-danger-soft">Hapus data ini</button>
-          </div>
-        ))}
-      </section>
-
       <section className="overflow-hidden rounded-2xl border border-line bg-surface">
-        <label className="flex min-h-14 items-center gap-3 px-4 active:bg-paper-2">
-          <span className="flex-1 text-[15px]">Notifikasi kendaraan diminta</span>
-          <input type="checkbox" checked={notif} onChange={(e) => setNotif(e.target.checked)} className="size-[22px] accent-ink" />
-        </label>
-        <label className="flex min-h-14 items-center gap-3 border-t border-line-2 px-4 active:bg-paper-2">
-          <span className="flex-1 text-[15px]">Kompres foto (hemat kuota)</span>
-          <input type="checkbox" checked={compress} onChange={(e) => setCompress(e.target.checked)} className="size-[22px] accent-ink" />
-        </label>
-        <button onClick={() => setPinOpen((v) => !v)} aria-expanded={pinOpen} className="flex min-h-14 w-full items-center gap-3 border-t border-line-2 px-4 text-left">
+        <button onClick={() => setPinOpen((v) => !v)} aria-expanded={pinOpen} className="flex min-h-14 w-full items-center gap-3 px-4 text-left">
           <span className="flex-1 text-[15px]">Ganti PIN</span><ChevronRight size={18} className={`text-muted transition ${pinOpen ? "rotate-90" : ""}`} />
         </button>
         {pinOpen && <PinForm onDone={() => setPinOpen(false)} />}
-        <button onClick={() => setGuideOpen((v) => !v)} aria-expanded={guideOpen} className="flex min-h-14 w-full items-center gap-3 border-t border-line-2 px-4 text-left">
-          <span className="flex-1 text-[15px]">Panduan foto &amp; checklist</span><ChevronRight size={18} className={`text-muted transition ${guideOpen ? "rotate-90" : ""}`} />
-        </button>
-        {guideOpen && (
-          <ol className="flex list-decimal flex-col gap-1.5 border-t border-line-2 py-3 pl-9 pr-4 text-sm leading-normal text-muted">
-            <li>Foto 4 sisi utuh dari jarak ±2 meter, plat terlihat di foto depan/belakang.</li>
-            <li>Kerusakan yang sudah ada: foto close-up, lalu tulis catatan singkat.</li>
-            <li>Ceklis hanya bagian yang benar-benar baik. Ragu = jangan diceklis.</li>
-            <li>Saat check out, foto ulang dari sudut yang sama dengan foto masuk.</li>
-            <li>Basement tanpa sinyal tidak masalah — data dikirim otomatis nanti.</li>
-          </ol>
-        )}
       </section>
 
       <button onClick={() => logout()} className="flex min-h-[52px] items-center justify-center rounded-[14px] border-[1.5px] border-danger text-[15px] font-semibold text-danger-ink">
