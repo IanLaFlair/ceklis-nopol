@@ -33,7 +33,7 @@ export function Dialog({ title, onClose, children, wide = false }: {
             <Close />
           </button>
         </div>
-        <div className="flex flex-col gap-4 overflow-y-auto p-5">{children}</div>
+        <div className="flex flex-col gap-4 overflow-y-auto p-5 [&>*]:shrink-0">{children}</div>
       </div>
     </div>
   );

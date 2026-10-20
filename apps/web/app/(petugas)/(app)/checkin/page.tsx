@@ -183,7 +183,7 @@ export default function CheckinPage() {
         </div>
       </header>
 
-      <main className="flex flex-1 flex-col gap-[18px] overflow-y-auto px-5 pb-6 pt-[18px]">
+      <main className="flex flex-1 flex-col [&>*]:shrink-0 gap-[18px] overflow-y-auto px-5 pb-6 pt-[18px]">
         {step === 1 && (
           <>
             <div className="relative flex h-[170px] items-center justify-center overflow-hidden rounded-2xl bg-[#161917] bg-[linear-gradient(#1D201E_1px,transparent_1px),linear-gradient(90deg,#1D201E_1px,transparent_1px)] bg-[size:24px_24px]">

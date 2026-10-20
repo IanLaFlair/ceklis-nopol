@@ -147,7 +147,7 @@ function Checkout({ tx, source, reload }: { tx: TxDetail; source: string; reload
     }
   }
 
-  const title = { compare: "Bandingkan kondisi", normal: "Selesai", incident: "Laporkan kerusakan", sent: "Insiden" }[mode];
+  const title = { compare: "Periksa kondisi", normal: "Selesai", incident: "Laporkan kerusakan", sent: "Insiden" }[mode];
   const inc = tx.incidents.at(-1);
 
   return (
@@ -160,7 +160,7 @@ function Checkout({ tx, source, reload }: { tx: TxDetail; source: string; reload
         </div>
       </header>
 
-      <main className="flex flex-1 flex-col gap-4 overflow-y-auto px-5 pb-6 pt-[18px]">
+      <main className="flex flex-1 flex-col [&>*]:shrink-0 gap-4 overflow-y-auto px-5 pb-6 pt-[18px]">
         <div className="flex items-center gap-3 rounded-2xl border border-line bg-surface p-3.5">
           <Plate size="lg">{tx.plate}</Plate>
           <span className="flex min-w-0 flex-1 flex-col">
@@ -213,7 +213,7 @@ function Checkout({ tx, source, reload }: { tx: TxDetail; source: string; reload
                     <Thumb blob={outPhotos[side]?.blob} alt="" />
                     <span className={`relative flex flex-col items-center gap-1.5 rounded-lg px-2.5 py-1.5 ${outPhotos[side] ? "bg-ink/80" : ""}`}>
                       <Camera size={26} />
-                      <span className="text-[13px] font-semibold">{outCam.busy ? "Memproses…" : outPhotos[side] ? "Ulangi foto" : "Foto sekarang"}</span>
+                      <span className="text-[13px] font-semibold">{outCam.busy ? "Memproses…" : outPhotos[side] ? "Ulangi foto" : "Ambil foto"}</span>
                     </span>
                   </button>
                   <span className="text-xs text-muted">Check out · sekarang</span>

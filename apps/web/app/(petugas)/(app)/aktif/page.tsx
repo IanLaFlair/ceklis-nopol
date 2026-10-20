@@ -2,12 +2,11 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { useQrCheckout } from "@/components/petugas/finder";
 import { Screen } from "@/components/petugas/shell";
 import { useSession } from "@/components/petugas/session";
 import { carLine } from "@/components/petugas/vehicle-row";
-import { ArrowRight, Scan, Search } from "@/components/icons";
-import { Badge, chip, ErrorNote, Plate } from "@/components/ui";
+import { ArrowRight, Search } from "@/components/icons";
+import { Badge, chip, Plate } from "@/components/ui";
 import { clock, duration, minutesSince, normalizePlate } from "@/lib/format";
 import { useActiveList, warmDetails, type ActiveItem } from "@/lib/petugas/data";
 
@@ -22,7 +21,6 @@ export default function AktifPage() {
   const { assignment } = useSession();
   const active = assignment.active!;
   const { items, offline } = useActiveList(active.post.id);
-  const qr = useQrCheckout(items);
   const [q, setQ] = useState("");
   const [filter, setFilter] = useState<(typeof FILTERS)[number]["id"]>("all");
   const [, tick] = useState(0);
@@ -52,17 +50,12 @@ export default function AktifPage() {
             </div>
             <span className="font-display text-3xl font-bold text-accent">{items.length}</span>
           </div>
-          <div className="flex gap-2">
-            <label className="flex min-h-[50px] flex-1 items-center gap-2.5 rounded-xl border border-ink-3 bg-ink-2 px-3.5">
-              <Search size={18} className="text-on-ink-muted" />
-              <span className="sr-only">Cari plat atau slot</span>
-              <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Cari plat atau slot"
-                className="min-w-0 flex-1 bg-transparent text-on-ink outline-none placeholder:text-on-ink-muted" />
-            </label>
-            <button onClick={qr.open} aria-label="Scan QR tiket cek list" className="flex size-[50px] items-center justify-center rounded-xl bg-accent text-ink">
-              <Scan size={22} />
-            </button>
-          </div>
+          <label className="flex min-h-[50px] items-center gap-2.5 rounded-xl border border-ink-3 bg-ink-2 px-3.5">
+            <Search size={18} className="text-on-ink-muted" />
+            <span className="sr-only">Cari plat atau slot</span>
+            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Cari plat atau slot"
+              className="min-w-0 flex-1 bg-transparent text-on-ink outline-none placeholder:text-on-ink-muted" />
+          </label>
         </div>
       }
     >
@@ -73,7 +66,6 @@ export default function AktifPage() {
           </button>
         ))}
       </div>
-      <ErrorNote>{qr.error}</ErrorNote>
       {offline && <p className="rounded-xl bg-warning-bg px-3.5 py-2.5 text-[13px] text-warning">Offline — menampilkan data terakhir yang tersimpan.</p>}
 
       {list.map((v) => {
@@ -95,11 +87,11 @@ export default function AktifPage() {
                 </span>
               ))}
             </div>
-            <div className="flex flex-wrap gap-1.5">
+            {(v.vip || v.local || v.status !== "parked") && <div className="flex flex-wrap gap-1.5">
               {v.vip && <Badge tone="parked">VIP</Badge>}
               {v.local && <Badge tone="local">Belum terkirim</Badge>}
               {v.status !== "parked" && <Badge tone="pending">{v.status === "incident_pending" ? "Menunggu supervisor" : "Kerusakan dicatat"}</Badge>}
-            </div>
+            </div>}
             {(v.notes || v.has_issue) && (
               <span className="rounded-lg bg-danger-bg px-2.5 py-1.5 text-xs text-[#7A2F06]">
                 {v.notes || "Ada bagian yang perlu dicek saat masuk"}
@@ -112,7 +104,6 @@ export default function AktifPage() {
         );
       })}
       {!list.length && <p className="py-10 text-center text-[15px] text-muted">Tidak ada kendaraan yang cocok.</p>}
-      {qr.scanner}
     </Screen>
   );
 }

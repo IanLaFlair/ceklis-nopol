@@ -22,7 +22,7 @@ export function Screen({ header, children, footer, tabs = true }: {
   return (
     <div className="mx-auto flex h-dvh max-w-[480px] flex-col bg-paper">
       <header className="bg-ink px-5 pb-4 pt-[max(env(safe-area-inset-top),20px)] text-on-ink">{header}</header>
-      <main className="flex flex-1 flex-col gap-4 overflow-y-auto px-5 pb-6 pt-[18px]">{children}</main>
+      <main className="flex flex-1 flex-col [&>*]:shrink-0 gap-4 overflow-y-auto px-5 pb-6 pt-[18px]">{children}</main>
       {footer}
       {tabs && <TabBar />}
     </div>
