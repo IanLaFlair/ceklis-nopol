@@ -13,3 +13,4 @@ apps/web/public/swe-worker-*.js
 .DS_Store
 *.tsbuildinfo
 .claude/
+.demo/
