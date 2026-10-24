@@ -9,8 +9,9 @@ from tests.conftest import login_petugas
 @pytest.fixture
 def nopol_env(monkeypatch):
     def set_env(**env):
-        for k in ("NOPOL_API_TOKEN", "NOPOL_EMAIL", "NOPOL_PASSWORD", "NOPOL_API_URL", "NOPOL_RECOGNIZE_PATH"):
-            monkeypatch.delenv(k, raising=False)
+        # Nilai kosong eksplisit supaya isi .env lokal (mis. API key asli) tidak ikut terbaca
+        for k in ("NOPOL_API_TOKEN", "NOPOL_EMAIL", "NOPOL_PASSWORD"):
+            monkeypatch.setenv(k, "")
         monkeypatch.setenv("NOPOL_API_URL", env.pop("NOPOL_API_URL", "https://nopol.test"))
         monkeypatch.setenv("NOPOL_RECOGNIZE_PATH", env.pop("NOPOL_RECOGNIZE_PATH", "/api/playground/recognize"))
         for k, v in env.items():
@@ -130,6 +131,9 @@ def test_engine_lokal_tanpa_login(world, nopol_env, monkeypatch):
      503, "Lisensi"),
     (httpx.Response(402, json={"status": "error", "error": "subscription_inactive"}), 503, "Lisensi"),
     (httpx.Response(400, json={"status": "error", "error": "invalid image"}), 422, "Foto"),
+    (httpx.Response(402, json={"error": "location_inactive"}), 503, "Lisensi"),
+    (httpx.Response(429, json={"error": "rate_limited"}), 429, "Terlalu banyak"),
+    (httpx.Response(503, json={"error": "recognize_unavailable"}), 502, "manual"),
 ])
 def test_status_engine(world, nopol_env, monkeypatch, resp, status, text):
     nopol_env(NOPOL_API_URL="http://engine.test:8001", NOPOL_RECOGNIZE_PATH="/recognize")

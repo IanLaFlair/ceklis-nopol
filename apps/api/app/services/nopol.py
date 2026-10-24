@@ -115,6 +115,8 @@ class NopolClient:
         if r.status_code in (402, 403):
             # not_activated / subscription_inactive / license_offline_expired
             raise NopolError(503, "Lisensi engine scan plat tidak aktif. Ketik manual dan hubungi admin.")
+        if r.status_code == 429:
+            raise NopolError(429, "Terlalu banyak scan dalam semenit. Tunggu sebentar atau ketik manual.")
         if r.status_code == 400:
             raise NopolError(422, "Foto tidak bisa dibaca. Coba foto ulang atau ketik manual.")
         if r.status_code >= 400:
