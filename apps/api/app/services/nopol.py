@@ -63,10 +63,11 @@ UNREADABLE = {"plate_not_detected", "plate_unreadable"}
 
 
 def parse(body: dict) -> Recognition | None:
-    status = body.get("status")
+    payload = body.get("result", body)
+    status = payload.get("status", body.get("status")) if isinstance(payload, dict) else body.get("status")
     if status is not None and status != "success":
         return None
-    cands = _candidates(body.get("result", body))
+    cands = [c for c in _candidates(payload) if c[0].lower() != "plate unreadable"]
     if not cands:
         return None
     plate, conf = max(cands, key=lambda c: c[1])

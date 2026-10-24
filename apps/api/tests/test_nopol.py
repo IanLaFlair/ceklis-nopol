@@ -137,3 +137,10 @@ def test_status_engine(world, nopol_env, monkeypatch, resp, status, text):
     r = scan(login_petugas(world.budi))
     assert r.status_code == status and text in r.json()["detail"]
     assert "Plate Unreadable" not in r.text
+
+
+def test_parse_respons_terbungkus_result():
+    wrapped = {"result": {"status": "plate_unreadable", "vehicle_type": "Unknown", "plate": "Plate Unreadable"}}
+    assert nopol.parse(wrapped) is None
+    ok = nopol.parse({"result": {"status": "success", "plate": "B 1234 ABC", "confidence": 0.93}})
+    assert ok.plate == "B 1234 ABC" and ok.confidence == 0.93
