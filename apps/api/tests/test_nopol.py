@@ -9,9 +9,10 @@ from tests.conftest import login_petugas
 @pytest.fixture
 def nopol_env(monkeypatch):
     def set_env(**env):
-        for k in ("NOPOL_API_TOKEN", "NOPOL_EMAIL", "NOPOL_PASSWORD"):
+        for k in ("NOPOL_API_TOKEN", "NOPOL_EMAIL", "NOPOL_PASSWORD", "NOPOL_API_URL", "NOPOL_RECOGNIZE_PATH"):
             monkeypatch.delenv(k, raising=False)
-        monkeypatch.setenv("NOPOL_API_URL", "https://nopol.test")
+        monkeypatch.setenv("NOPOL_API_URL", env.pop("NOPOL_API_URL", "https://nopol.test"))
+        monkeypatch.setenv("NOPOL_RECOGNIZE_PATH", env.pop("NOPOL_RECOGNIZE_PATH", "/api/playground/recognize"))
         for k, v in env.items():
             monkeypatch.setenv(k, v)
         get_settings.cache_clear()
@@ -36,7 +37,12 @@ class FakeNopol:
             if not ok:
                 return httpx.Response(401, json={"error": "not_authenticated"})
             assert b'name="image"' in req.content
+            self.last_body = req.content
             return httpx.Response(200, json={"result": self.result})
+        if req.url.path == "/recognize":  # engine lokal: tanpa login, hasil di level atas
+            if isinstance(self.result, httpx.Response):
+                return self.result
+            return httpx.Response(200, json={"status": "success", "vehicle_type": "Unknown", **self.result})
         return httpx.Response(404)
 
 
@@ -49,7 +55,7 @@ def scan(c):
 
 
 def test_belum_dikonfigurasi_503(world, nopol_env):
-    nopol_env()
+    nopol_env(NOPOL_API_URL="")
     r = scan(login_petugas(world.budi))
     assert r.status_code == 503 and "manual" in r.json()["detail"]
 
@@ -61,6 +67,7 @@ def test_api_key_bearer(world, nopol_env, monkeypatch):
     r = scan(login_petugas(world.budi))
     assert r.status_code == 200, r.text
     assert r.json() == {"plate": "B 1234 ABC", "confidence": 0.97, "needs_confirmation": False}
+    assert b'name="vehicle"' in fake.last_body
     assert "POST /api/auth/login" not in fake.calls
 
 
@@ -103,3 +110,30 @@ def test_parse_memilih_keyakinan_tertinggi():
     body = {"result": {"detections": [{"text": "B 1 A", "conf": 0.4}, {"text": "B 1234 ABC", "conf": 0.91}]}}
     rec = nopol.parse(body)
     assert rec.plate == "B 1234 ABC" and rec.confidence == 0.91
+
+
+def test_engine_lokal_tanpa_login(world, nopol_env, monkeypatch):
+    nopol_env(NOPOL_API_URL="http://engine.test:8001", NOPOL_RECOGNIZE_PATH="/recognize")
+    fake = FakeNopol({"plate": "AG 77 RT", "confidence": 0.86})
+    use(fake, monkeypatch)
+    r = scan(login_petugas(world.budi))
+    assert r.json() == {"plate": "AG 77 RT", "confidence": 0.86, "needs_confirmation": True}
+    assert fake.calls == ["POST /recognize"]
+
+
+@pytest.mark.parametrize("resp, status, text", [
+    (httpx.Response(200, json={"status": "plate_not_detected", "vehicle_type": "Unknown", "plate": "Plate Unreadable"}),
+     422, "tidak terbaca"),
+    (httpx.Response(200, json={"status": "plate_unreadable", "vehicle_type": "Unknown", "plate": "Plate Unreadable"}),
+     422, "tidak terbaca"),
+    (httpx.Response(403, json={"status": "error", "plate": "Plate Unreadable", "error": "not_activated"}),
+     503, "Lisensi"),
+    (httpx.Response(402, json={"status": "error", "error": "subscription_inactive"}), 503, "Lisensi"),
+    (httpx.Response(400, json={"status": "error", "error": "invalid image"}), 422, "Foto"),
+])
+def test_status_engine(world, nopol_env, monkeypatch, resp, status, text):
+    nopol_env(NOPOL_API_URL="http://engine.test:8001", NOPOL_RECOGNIZE_PATH="/recognize")
+    use(FakeNopol(resp), monkeypatch)
+    r = scan(login_petugas(world.budi))
+    assert r.status_code == status and text in r.json()["detail"]
+    assert "Plate Unreadable" not in r.text

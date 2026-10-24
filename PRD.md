@@ -25,7 +25,7 @@ Hasil review klien setelah demo; bagian PRD di bawah yang bertentangan mengikuti
 
 **Akun (PWA)** — status antrean offline, toggle notifikasi/kompres, dan panduan dihapus. Antrean offline tetap jalan otomatis; data yang **ditolak server** muncul sebagai peringatan di Beranda.
 
-**Scan plat (§9)** — lewat API Nopol `https://api.nopol-lpr.com/api/playground/recognize` (multipart `image`). Butuh autentikasi: `NOPOL_API_TOKEN` (Bearer, disarankan — perlu ditambahkan di Nopol) atau akun khusus `NOPOL_EMAIL`/`NOPOL_PASSWORD`. *Keputusan terbuka:* cara autentikasi & format `result` final.
+**Scan plat (§9)** — panggil **engine Nopol on-prem** di LAN lokasi: `POST {NOPOL_API_URL}/recognize` (multipart `image`, opsional `vehicle`), tanpa auth per-request (lisensi diaktifkan di engine). Hasil ditentukan dari `status`: `success` → `plate` + `confidence` (0..1); `plate_not_detected` / `plate_unreadable` → minta ketik manual; HTTP 402/403 → lisensi engine tidak aktif; 400 → gambar tidak valid. Confidence cenderung terlalu yakin, jadi hasil scan **selalu** ditampilkan untuk dicocokkan petugas (ambang konfirmasi 0.97). Cloud `api.nopol-lpr.com` tidak punya API recognize server-to-server (playground khusus login web; license key bukan API key) — kalau butuh, itu fitur baru di nopol-lpr. Dev: container `lpr-local` (`nopol-engine:local`) di `localhost:8001`.
 
 ---
 
@@ -228,10 +228,10 @@ parked ──(check out, tidak ada kerusakan baru)──► released
 
 ## 9. Scan plat (integrasi Nopol)
 
-- PWA ambil 1 foto dari kamera belakang → `POST /api/plates/scan` (Ceklis API) → diteruskan ke API Nopol (`NOPOL_API_URL` + `NOPOL_RECOGNIZE_PATH`, lihat §0), dibaca `plate` + `confidence` dari `result`.
+- PWA ambil 1 foto dari kamera belakang → `POST /api/plates/scan` (Ceklis API) → diteruskan ke engine Nopol (`NOPOL_API_URL` + `NOPOL_RECOGNIZE_PATH`, lihat §0).
 - Hasil < 0.8 confidence: tampilkan tapi minta petugas konfirmasi.
 - Kalau gagal / offline: petugas ketik manual, tidak memblokir alur.
-- *Keputusan terbuka:* engine yang dipakai — instance Nopol khusus Ceklis di cloud, atau engine di server klien.
+- Diputuskan (Okt 2026): engine Nopol on-prem di server klien / LAN lokasi.
 
 ---
 
@@ -344,8 +344,8 @@ S3_BUCKET=
 S3_ACCESS_KEY=
 S3_SECRET_KEY=
 S3_REGION=
-NOPOL_API_URL=https://api.nopol-lpr.com
-NOPOL_RECOGNIZE_PATH=/api/playground/recognize
+NOPOL_API_URL=http://<engine-lokasi>:8001
+NOPOL_RECOGNIZE_PATH=/recognize
 NOPOL_API_TOKEN=
 NOPOL_EMAIL=
 NOPOL_PASSWORD=

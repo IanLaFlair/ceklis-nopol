@@ -233,7 +233,7 @@ export default function CheckinPage() {
               {scan.scanned && normalizePlate(scan.scanned) === normalizePlate(plate) ? (
                 <div className="flex flex-col items-center gap-2.5">
                   <span className="rounded border-2 border-[#111] bg-plate px-4 py-1.5 font-mono text-[26px] font-bold outline-2 outline-offset-[5px] outline-accent">{scan.scanned}</span>
-                  <span className="text-xs text-[#C9CCC6]">Terbaca otomatis · {scan.confidence?.toFixed(2)}</span>
+                  <span className="text-xs text-[#C9CCC6]">Terbaca otomatis — cocokkan dengan plat asli</span>
                   <button onClick={plateCam.open} className="text-xs text-on-ink-muted underline">Scan ulang</button>
                 </div>
               ) : (

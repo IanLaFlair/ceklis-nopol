@@ -24,13 +24,15 @@ class Settings(BaseSettings):
     s3_secret_key: str = ""
     s3_region: str = "us-east-1"
 
-    # Scan plat lewat API Nopol (PRD §9). Isi salah satu: NOPOL_API_TOKEN, atau NOPOL_EMAIL + NOPOL_PASSWORD.
-    nopol_api_url: str = "https://api.nopol-lpr.com"
-    nopol_recognize_path: str = "/api/playground/recognize"
+    # Scan plat lewat engine Nopol (PRD §9). Kosong = scan mati.
+    # Engine lokal/on-prem: URL engine + /recognize, tanpa login. API cloud: isi token atau akun.
+    nopol_api_url: str = ""
+    nopol_recognize_path: str = "/recognize"
     nopol_api_token: str = ""
     nopol_email: str = ""
     nopol_password: str = ""
-    plate_confirm_threshold: float = 0.8
+    # Confidence engine cenderung terlalu yakin (bacaan salah bisa 0.86–0.96); di bawah ini petugas diminta cek ulang
+    plate_confirm_threshold: float = 0.97
 
     photo_max_px: int = 1600
     photo_retention_days: int = 90

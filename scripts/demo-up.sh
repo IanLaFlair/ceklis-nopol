@@ -30,8 +30,9 @@ loop() { # nama, direktori, perintah…
 }
 
 pkill -f "uvicorn app.main:app" 2>/dev/null || true
-pkill -f "next start -p $PORT" 2>/dev/null || true
 pkill -f "ngrok http $PORT" 2>/dev/null || true
+# Next mengganti nama prosesnya jadi "next-server", jadi matikan berdasarkan port
+for p in $PORT 8000; do kill $(lsof -tiTCP:$p -sTCP:LISTEN) 2>/dev/null || true; done
 sleep 1
 loop api "$ROOT/apps/api" "./.venv/bin/uvicorn app.main:app --port 8000"
 loop web "$ROOT/apps/web" "NEXT_DIST_DIR=.next-prod ./node_modules/.bin/next start -p $PORT"
