@@ -1,0 +1,15 @@
+# Tambahkan blok ini di PALING BAWAH ~/infra/caddy/Caddyfile (jangan ubah blok situs lain).
+
+ceklis.nopol-lpr.com {
+	encode zstd gzip
+	reverse_proxy localhost:3030
+}
+
+# Foto diunggah langsung dari HP (presigned URL). Host header diteruskan apa adanya,
+# jadi tanda tangan presigned (dibuat untuk host ini) tetap cocok di storage.
+ceklis-files.nopol-lpr.com {
+	request_body {
+		max_size 20MB
+	}
+	reverse_proxy localhost:9030
+}

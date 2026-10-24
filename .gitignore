@@ -14,3 +14,4 @@ apps/web/public/swe-worker-*.js
 *.tsbuildinfo
 .claude/
 .demo/
+.env.production

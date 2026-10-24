@@ -5,6 +5,7 @@
 """
 import argparse
 import os
+import secrets
 from datetime import time
 
 from sqlalchemy import select
@@ -15,7 +16,7 @@ from app.models import Assignment, ChecklistTemplate, Client, Post, Site, Templa
 from app.services.template_config import STANDAR_MOBIL
 
 
-def seed_base(db) -> ChecklistTemplate:
+def seed_base(db, demo: bool = False) -> ChecklistTemplate:
     tpl = db.scalar(select(ChecklistTemplate).where(ChecklistTemplate.name == "Standar Mobil",
                                                     ChecklistTemplate.client_id.is_(None)))
     config = STANDAR_MOBIL.model_dump(mode="json")
@@ -31,9 +32,14 @@ def seed_base(db) -> ChecklistTemplate:
         print(f"+ template Standar Mobil v{version}")
     email = os.environ.get("SEED_ADMIN_EMAIL", "admin@ceklis.local").lower()
     if not db.scalar(select(User).where(User.role == "super_admin")):
-        password = os.environ.get("SEED_ADMIN_PASSWORD", "ceklis-admin")
+        password = os.environ.get("SEED_ADMIN_PASSWORD") or ("ceklis-admin" if demo else None)
+        generated = password is None
+        if generated:
+            # Produksi tanpa SEED_ADMIN_PASSWORD: jangan pakai password default yang tertulis di README
+            password = secrets.token_urlsafe(12)
         db.add(User(name="Super Admin", email=email, role="super_admin", password_hash=hash_secret(password)))
-        print(f"+ super admin {email}")
+        note = f" — password awal (simpan, hanya tampil sekali): {password}" if generated else ""
+        print(f"+ super admin {email}{note}")
     db.commit()
     return tpl
 
@@ -96,7 +102,7 @@ def main() -> None:
     p.add_argument("--demo", action="store_true")
     args = p.parse_args()
     with SessionLocal() as db:
-        tpl = seed_base(db)
+        tpl = seed_base(db, demo=args.demo)
         if args.demo:
             seed_demo(db, tpl)
 
