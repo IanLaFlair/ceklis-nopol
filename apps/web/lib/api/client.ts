@@ -29,7 +29,15 @@ function detail(body: unknown, fallback: string): string {
   if (body && typeof body === "object" && "detail" in body) {
     const d = (body as { detail: unknown }).detail;
     if (typeof d === "string") return d;
-    if (Array.isArray(d)) return d.map((e) => (e as { msg?: string }).msg ?? "").filter(Boolean).join("; ");
+    if (Array.isArray(d))
+      return d
+        .map((e) => {
+          const { msg, loc } = e as { msg?: string; loc?: (string | number)[] };
+          const field = loc?.filter((x) => x !== "body").join(".");
+          return msg ? (field ? `${field}: ${msg}` : msg) : "";
+        })
+        .filter(Boolean)
+        .join("; ");
   }
   return fallback;
 }

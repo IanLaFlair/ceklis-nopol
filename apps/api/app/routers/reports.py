@@ -53,7 +53,8 @@ def _txs(db, user, scope_, start, end):
     stmt = (select(Transaction)
             .options(selectinload(Transaction.post), selectinload(Transaction.site),
                      selectinload(Transaction.checkin_user), selectinload(Transaction.checkout_user),
-                     selectinload(Transaction.incidents))
+                     selectinload(Transaction.incidents), selectinload(Transaction.checks),
+                     selectinload(Transaction.inside_items))
             .where(Transaction.checkin_at >= start, Transaction.checkin_at < end)
             .order_by(Transaction.checkin_at))
     if ids is not None:
@@ -83,15 +84,25 @@ def _csv(name: str, header: list[str], rows) -> StreamingResponse:
 @router.get("/transactions.csv")
 def transactions_csv(user: AdminUser, db: DB, p: PeriodQ):
     rows = [[
-        tx.ticket_code, tx.plate, tx.vehicle_type or "", tx.color or "", tx.make_model or "", tx.site.name,
-        tx.post.name, tx.slot or "", tx.key_tag or "", _fmt(tx.checkin_at), tx.checkin_user.name,
+        tx.plate, tx.site.name, tx.post.name, _fmt(tx.checkin_at), tx.checkin_user.name,
         _fmt(tx.checkout_at), tx.checkout_user.name if tx.checkout_user else "", _minutes(tx) or "",
-        STATUS_LABEL[tx.status], " ".join(i.code for i in tx.incidents), (tx.notes or "").replace("\n", " "),
+        STATUS_LABEL[tx.status], _conditions(tx), _inside(tx), (tx.notes or "").replace("\n", " "),
     ] for tx in _txs(db, user, p.scope, p.start, p.end)]
     return _csv(f"ceklis-transaksi-{p.d_from}-{p.d_to}.csv", [
-        "Tiket cek list", "Nomor polisi", "Jenis", "Warna", "Merek/model", "Lokasi", "Pos", "Slot", "Kunci",
-        "Masuk", "Petugas masuk", "Keluar", "Petugas keluar", "Durasi (menit)", "Status", "Insiden", "Catatan",
+        "Nomor polisi", "Lokasi", "Pos", "Masuk", "Petugas masuk", "Keluar", "Petugas keluar", "Durasi (menit)",
+        "Status", "Kondisi (selain mulus)", "Barang di dalam", "Catatan",
     ], rows)
+
+
+def _conditions(tx) -> str:
+    labels = {c["id"]: c["label"] for c in (tx.template_snapshot or {}).get("conditions", [])}
+    bad = [c for c in tx.checks if c.phase == "in" and not c.checked]
+    return ", ".join(f"{c.label_snapshot}: {labels.get(c.condition or '', 'perlu dicek')}" for c in bad) or "Semua baik"
+
+
+def _inside(tx) -> str:
+    items = [i for i in tx.inside_items if i.phase == "in" and i.present]
+    return ", ".join(f"{i.label} ({i.extra_text})" if i.extra_text else i.label for i in items) or "Tidak ada"
 
 
 @router.get("/incidents.csv")

@@ -48,7 +48,7 @@ export default function TransaksiPage() {
         <label className="flex min-h-[46px] w-full items-center gap-2 rounded-xl border-[1.5px] border-field bg-surface px-3 sm:w-[300px]">
           <Search size={18} />
           <span className="sr-only">Cari</span>
-          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Cari plat, jenis, atau warna"
+          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Cari plat nomor"
             className="min-w-0 flex-1 border-0 bg-transparent text-base outline-none sm:text-sm" />
         </label>
       </PageHead>
@@ -70,7 +70,7 @@ export default function TransaksiPage() {
               className={`flex min-h-16 w-full items-center gap-3 px-4 py-3 text-left hover:bg-paper-2 ${i ? "border-t border-line-2" : ""} ${r.id === id ? "bg-warning-bg shadow-[inset_3px_0_0_var(--color-accent)]" : ""}`}>
               <Plate size="sm">{r.plate}</Plate>
               <span className="flex min-w-0 flex-1 flex-col">
-                <span className="truncate text-sm font-medium">{[r.make_model, r.color].filter(Boolean).join(" · ") || r.vehicle_type || "-"}</span>
+                <span className="truncate text-sm font-medium">{[r.make_model, r.color].filter(Boolean).join(" · ") || `oleh ${r.checkin_by?.name ?? "-"}${r.checkout_by ? ` · keluar oleh ${r.checkout_by.name}` : ""}`}</span>
                 <span className="truncate text-xs text-muted">
                   {r.site.name} · {r.post.name} · {r.checkout_at ? `${clock(r.checkin_at)}–${clock(r.checkout_at)}` : dateTime(r.checkin_at)}
                 </span>

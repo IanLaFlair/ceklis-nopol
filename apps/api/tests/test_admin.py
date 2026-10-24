@@ -51,7 +51,7 @@ def test_stats_dan_laporan(world):
     assert counts == {"all": 2, "parked": 1, "done": 1, "incident": 0}
 
     csv = ops.get("/api/admin/reports/transactions.csv")
-    assert csv.status_code == 200 and "Tiket cek list" in csv.text and "B 1234 ABC" in csv.text
+    assert csv.status_code == 200 and "Kondisi (selain mulus)" in csv.text and "B 1234 ABC" in csv.text
     pdf = ops.get("/api/admin/reports/summary.pdf")
     assert pdf.status_code == 200 and pdf.content.startswith(b"%PDF")
 

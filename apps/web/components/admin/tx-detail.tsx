@@ -30,7 +30,13 @@ export function TxDetailView({ id }: { id: number }) {
   const insideIn = tx.inside_items.filter((i) => i.phase === "in" && i.present);
   const insideOut = new Map(tx.inside_items.filter((i) => i.phase === "out").map((i) => [i.item_id, i]));
   const details = tx.photos.filter((p) => p.side === "detail");
-  const car = [tx.make_model, tx.color].filter(Boolean).join(" · ") || tx.vehicle_type || "-";
+  const hasSidePhotos = tx.photos.some((p) => p.side !== "detail");
+  const car = [tx.make_model, tx.color].filter(Boolean).join(" · ") || tx.vehicle_type;
+  // Data lama (alur 4 sisi) masih punya slot/kunci/jenis; alur ringkas tidak
+  const meta = [tx.site.name, tx.post.name, tx.slot && `slot ${tx.slot}`, tx.key_tag && `kunci ${tx.key_tag}`].filter(Boolean).join(" · ");
+  const photoLabel = (p: TxPhoto) =>
+    (p.item_id && (inChecks.find((c) => c.item_id === p.item_id)?.label ?? tx.inside_items.find((i) => i.item_id === p.item_id)?.label)) ||
+    (p.incident_id ? "insiden" : "close-up");
 
   return (
     <div className="flex flex-col gap-3.5">
@@ -38,10 +44,8 @@ export function TxDetailView({ id }: { id: number }) {
         <div className="flex min-w-0 items-center gap-3.5">
           <span className="rounded border-2 border-accent bg-plate px-3 py-1 font-mono text-xl font-bold text-ink whitespace-nowrap">{tx.plate}</span>
           <span className="flex min-w-0 flex-col">
-            <strong className="text-base">{car}</strong>
-            <span className="text-[13px] text-on-ink-muted">
-              {tx.site.name} · {tx.post.name} · slot {tx.slot ?? "-"} · Tiket cek list {tx.ticket_code}
-            </span>
+            {car && <strong className="text-base">{car}</strong>}
+            <span className="text-[13px] text-on-ink-muted">{meta}</span>
           </span>
         </div>
         <StatusBadge status={tx.status} />
@@ -50,43 +54,43 @@ export function TxDetailView({ id }: { id: number }) {
       <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-[repeat(auto-fit,minmax(150px,1fr))]">
         <Info label="Masuk" value={dateTime(tx.checkin_at)} sub={`oleh ${tx.checkin_by?.name ?? "-"}`} />
         <Info label="Keluar" value={tx.checkout_at ? dateTime(tx.checkout_at) : "—"} sub={tx.checkout_by ? `oleh ${tx.checkout_by.name}` : "belum keluar"} />
-        <Info label="Durasi" value={duration(tx.duration_minutes)} sub={`kunci ${tx.key_tag ?? "-"}`} />
+        <Info label="Durasi" value={duration(tx.duration_minutes)} sub={tx.released_at ? "selesai" : "masih parkir"} />
         <Info label="Barang di dalam" value={insideIn.length ? insideIn.map((i) => (i.extra_text ? `${i.label} (${i.extra_text})` : i.label)).join(", ") : "Tidak ada"}
           sub={insideOut.size ? (insideIn.every((i) => insideOut.get(i.item_id)?.present) ? "dikonfirmasi saat keluar" : "ada yang tidak dikonfirmasi") : undefined} />
       </div>
 
-      <section className={`${card} flex flex-col gap-3 p-[18px]`}>
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 className={h2}>Foto kondisi · check in vs check out</h2>
-          {!tx.photos_complete && <Badge tone="parked">Ada foto belum terunggah</Badge>}
-        </div>
-        <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
-          {SIDES.map((s) => (
-            <div key={s} className="flex flex-col gap-1.5">
-              <span className="text-xs font-semibold">{SIDE_LABEL[s]}</span>
-              <PhotoBox photo={sidePhoto(tx, "in", s)} label={`${SIDE_LABEL[s]} masuk`} />
-              <PhotoBox photo={sidePhoto(tx, "out", s)} label={`${SIDE_LABEL[s]} keluar`} />
-            </div>
-          ))}
-        </div>
-        <span className="text-xs text-muted">Baris atas: check in · baris bawah: check out</span>
-        {details.length > 0 && (
-          <>
-            <h3 className="text-sm font-semibold">Foto close-up</h3>
+      {(hasSidePhotos || details.length > 0) && (
+        <section className={`${card} flex flex-col gap-3 p-[18px]`}>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h2 className={h2}>Foto</h2>
+            {!tx.photos_complete && <Badge tone="parked">Ada foto belum terunggah</Badge>}
+          </div>
+          {hasSidePhotos && (
+            <>
+              <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+                {SIDES.map((s) => (
+                  <div key={s} className="flex flex-col gap-1.5">
+                    <span className="text-xs font-semibold">{SIDE_LABEL[s]}</span>
+                    <PhotoBox photo={sidePhoto(tx, "in", s)} label={`${SIDE_LABEL[s]} masuk`} />
+                    <PhotoBox photo={sidePhoto(tx, "out", s)} label={`${SIDE_LABEL[s]} keluar`} />
+                  </div>
+                ))}
+              </div>
+              <span className="text-xs text-muted">Baris atas: check in · baris bawah: check out</span>
+            </>
+          )}
+          {details.length > 0 && (
             <div className="grid grid-cols-3 gap-2.5 sm:grid-cols-5">
               {details.map((p) => (
                 <div key={p.id} className="flex flex-col gap-1">
-                  <PhotoBox photo={p} label="close-up" />
-                  <span className="text-[11px] text-muted">
-                    {p.phase === "in" ? "Masuk" : "Keluar"}
-                    {p.item_id ? ` · ${inChecks.find((c) => c.item_id === p.item_id)?.label ?? p.item_id}` : p.incident_id ? " · insiden" : ""}
-                  </span>
+                  <PhotoBox photo={p} label={photoLabel(p)} />
+                  <span className="text-[11px] text-muted">{p.phase === "in" ? "Masuk" : "Keluar"} · {photoLabel(p)}</span>
                 </div>
               ))}
             </div>
-          </>
-        )}
-      </section>
+          )}
+        </section>
+      )}
 
       <section className={`${card} overflow-hidden`}>
         <div className="border-b border-[#E6E6E0] px-[18px] py-4"><h2 className={h2}>Checklist bagian luar</h2></div>

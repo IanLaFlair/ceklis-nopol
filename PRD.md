@@ -6,6 +6,29 @@ Bahasa UI: Indonesia.
 
 ---
 
+## 0. Perubahan alur (Okt 2026) — berlaku di atas bagian lain
+
+Hasil review klien setelah demo; bagian PRD di bawah yang bertentangan mengikuti ini.
+
+**Check In (PWA) — 2 langkah**
+1. *Nomor polisi*: scan plat (§9) atau ketik. Jenis, warna, merek/model, slot, no. gantungan kunci, no. WA pemilik **tidak ditanyakan**.
+2. *Checklist*: tiap bagian luar **wajib** dipilih salah satu kondisi dari template (default **Mulus / Penyok / Lecet**), menggantikan centang + catatan per item. Tidak ada "Ceklis semua". Foto close-up untuk Penyok/Lecet opsional (kecuali template mewajibkan). *Barang di dalam* yang dicentang **wajib difoto** (`requires_photo_if_present`). Catatan umum opsional.
+- **Tanpa** foto 4 sisi (template default `photo_mode: off`), **tanpa** ringkasan otomatis di layar, **tanpa** tiket cek list / QR / WhatsApp — tidak ada yang dikirim ke pelanggan. Selesai = layar "Check in berhasil".
+- Server tetap menyimpan `summary_text` dan kode tiket internal (untuk admin & laporan).
+
+**Check Out (PWA)**
+- Tombol Check Out → daftar kendaraan masih parkir (cari nopol) → detail (masuk jam/oleh siapa, lama parkir, barang, kondisi saat masuk) → konfirmasi "Yakin ingin check out?" → selesai.
+- Tanpa scan QR, tanpa foto ulang, tanpa pertanyaan kerusakan baru. Nama staf yang check out dicatat dan ditampilkan.
+- Alur insiden (§4.3, §5 /admin/insiden) tetap ada di API & admin, tapi **tidak dipicu dari PWA**. *Keputusan terbuka:* hapus, atau tambah tombol "Laporkan kerusakan" di check out.
+
+**Template (§6)** — tambahan `conditions: [{id, label, ok}]` (diatur di editor admin) dan `requires_photo_if_present` per barang di dalam. `transaction_checks.condition` menyimpan pilihan kondisi.
+
+**Akun (PWA)** — status antrean offline, toggle notifikasi/kompres, dan panduan dihapus. Antrean offline tetap jalan otomatis; data yang **ditolak server** muncul sebagai peringatan di Beranda.
+
+**Scan plat (§9)** — lewat API Nopol `https://api.nopol-lpr.com/api/playground/recognize` (multipart `image`). Butuh autentikasi: `NOPOL_API_TOKEN` (Bearer, disarankan — perlu ditambahkan di Nopol) atau akun khusus `NOPOL_EMAIL`/`NOPOL_PASSWORD`. *Keputusan terbuka:* cara autentikasi & format `result` final.
+
+---
+
 ## 1. Ringkasan
 
 Ceklis adalah aplikasi untuk petugas valet mencatat kondisi kendaraan saat **masuk (check in)** dan **keluar (check out)**: checklist cukup diklik, foto 4 sisi, barang di dalam, dan perbandingan kondisi saat serah terima. Dipakai di HP sebagai **PWA**. Admin memantau semua lokasi lewat **dashboard web**.
@@ -205,7 +228,7 @@ parked ──(check out, tidak ada kerusakan baru)──► released
 
 ## 9. Scan plat (integrasi Nopol)
 
-- PWA ambil 1 foto dari kamera belakang → `POST /api/plates/scan` (Ceklis API) → diteruskan ke engine Nopol (`NOPOL_ENGINE_URL`, kontrak `/v1/recognize`, respons `plate`, `confidence`).
+- PWA ambil 1 foto dari kamera belakang → `POST /api/plates/scan` (Ceklis API) → diteruskan ke API Nopol (`NOPOL_API_URL` + `NOPOL_RECOGNIZE_PATH`, lihat §0), dibaca `plate` + `confidence` dari `result`.
 - Hasil < 0.8 confidence: tampilkan tapi minta petugas konfirmasi.
 - Kalau gagal / offline: petugas ketik manual, tidak memblokir alur.
 - *Keputusan terbuka:* engine yang dipakai — instance Nopol khusus Ceklis di cloud, atau engine di server klien.
@@ -321,8 +344,11 @@ S3_BUCKET=
 S3_ACCESS_KEY=
 S3_SECRET_KEY=
 S3_REGION=
-NOPOL_ENGINE_URL=
-NOPOL_ENGINE_TOKEN=
+NOPOL_API_URL=https://api.nopol-lpr.com
+NOPOL_RECOGNIZE_PATH=/api/playground/recognize
+NOPOL_API_TOKEN=
+NOPOL_EMAIL=
+NOPOL_PASSWORD=
 PHOTO_MAX_PX=1600
 PHOTO_RETENTION_DAYS=90
 NEXT_PUBLIC_API_BASE_URL=https://ceklis.nopol-lpr.com/api

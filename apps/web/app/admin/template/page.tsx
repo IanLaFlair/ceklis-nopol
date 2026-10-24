@@ -7,7 +7,7 @@ import { useQueryParam } from "@/lib/admin/scope";
 import type { TemplateFull, TemplateRow } from "@/lib/admin/types";
 import { SIDE_LABEL, dateTime } from "@/lib/format";
 import { buildSummary, exteriorItems, insideItems } from "@/lib/summary";
-import type { PhotoMode, TemplateConfig, TemplateGroup, TemplateItem } from "@/lib/types";
+import type { ConditionOption, PhotoMode, TemplateConfig, TemplateGroup, TemplateItem } from "@/lib/types";
 import { PageHead, btnSm, card, h2, inputSm, useAdmin } from "@/components/admin/shell";
 import { ChevronDown, Close } from "@/components/icons";
 import { ErrorNote, Spinner } from "@/components/ui";
@@ -15,7 +15,7 @@ import { ErrorNote, Spinner } from "@/components/ui";
 const SIDES = ["depan", "belakang", "kiri", "kanan"] as const;
 const MODES: { id: PhotoMode; label: string }[] = [
   { id: "required_4_sides", label: "Wajib foto sisi" },
-  { id: "only_when_unchecked", label: "Hanya kalau tidak diceklis" },
+  { id: "only_when_unchecked", label: "Hanya bagian yang tidak baik" },
   { id: "off", label: "Mati" },
 ];
 
@@ -209,6 +209,8 @@ function Editor({ id }: { id: number }) {
       )}
 
       <fieldset disabled={readOnly} className="flex flex-col gap-3.5">
+        <ConditionsEditor conditions={cfg.conditions ?? []} onChange={(conditions) => update((c) => ({ ...c, conditions }))} />
+
         <section className={`${card} flex flex-col gap-3 px-5 py-[18px]`}>
           <div className="flex flex-wrap items-center justify-between gap-3">
             <h2 className={h2}>Foto wajib</h2>
@@ -235,7 +237,7 @@ function Editor({ id }: { id: number }) {
             </div>
           )}
           <span className="text-xs text-muted">
-            {cfg.photo_mode === "off" ? "Foto tidak diwajibkan sama sekali." : "Item yang tidak diceklis dan bertanda “wajib foto” tetap butuh foto close-up + catatan."}
+            {cfg.photo_mode === "off" ? "Foto sisi & close-up tidak diwajibkan. Foto barang di dalam tetap mengikuti tanda “wajib foto kalau ada”." : "Bagian yang tidak baik dan bertanda “wajib foto” butuh foto close-up."}
           </span>
         </section>
 
@@ -425,5 +427,68 @@ function SummaryLineRow({ label, ids, items, onLabel, onIds, onUp, onDown, onRem
         </div>
       )}
     </div>
+  );
+}
+
+
+const DEFAULT_CONDITIONS: ConditionOption[] = [
+  { id: "mulus", label: "Mulus", ok: true },
+  { id: "penyok", label: "Penyok", ok: false },
+  { id: "lecet", label: "Lecet", ok: false },
+];
+
+/** Pilihan kondisi tiap bagian luar (mis. Mulus / Penyok / Lecet). Id lama tidak pernah diubah. */
+function ConditionsEditor({ conditions, onChange }: { conditions: ConditionOption[]; onChange: (c: ConditionOption[]) => void }) {
+  const [draft, setDraft] = useState("");
+  const set = (i: number, patch: Partial<ConditionOption>) => onChange(conditions.map((c, x) => (x === i ? { ...c, ...patch } : c)));
+  function add() {
+    const label = draft.trim();
+    if (!label) return;
+    const id = uniqueId(slug(label).slice(0, 28), new Set(conditions.map((c) => c.id)));
+    onChange([...conditions, { id, label, ok: false }]);
+    setDraft("");
+  }
+  return (
+    <section className={`${card} flex flex-col gap-3 px-5 py-[18px]`}>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h2 className={h2}>Pilihan kondisi</h2>
+        <span className="text-[13px] text-muted">Petugas wajib memilih salah satu untuk tiap bagian luar</span>
+      </div>
+      {conditions.length === 0 ? (
+        <div className="flex flex-wrap items-center gap-3 rounded-xl bg-paper-2 px-3.5 py-3 text-sm text-muted">
+          Template ini masih memakai centang baik / tidak.
+          <button type="button" onClick={() => onChange(DEFAULT_CONDITIONS)} className={btnSm}>Pakai Mulus / Penyok / Lecet</button>
+        </div>
+      ) : (
+        <div className="flex flex-col">
+          {conditions.map((c, i) => (
+            <div key={c.id} className={`flex flex-wrap items-center gap-3 py-2 ${i ? "border-t border-line-2" : ""}`}>
+              <input value={c.label} onChange={(e) => set(i, { label: e.target.value })} aria-label={`Label kondisi ${c.label}`}
+                className="min-h-10 min-w-[140px] flex-1 rounded-lg border border-transparent px-2 text-[15px] outline-none hover:border-line focus:border-ink" />
+              <span className="font-mono text-[11px] text-muted-2">{c.id}</span>
+              <label className="flex min-h-10 items-center gap-2 text-[13px] text-muted">
+                <input type="checkbox" checked={c.ok} onChange={(e) => set(i, { ok: e.target.checked })} className="size-[18px] accent-ink" />
+                Dihitung baik
+              </label>
+              <OrderButtons label={c.label} onUp={() => onChange(move(conditions, i, -1))} onDown={() => onChange(move(conditions, i, 1))} />
+              <button type="button" onClick={() => onChange(conditions.filter((_, x) => x !== i))} disabled={conditions.length <= 2}
+                aria-label={`Hapus ${c.label}`} className="flex size-10 items-center justify-center rounded-lg text-muted hover:bg-paper-2 disabled:opacity-30">
+                <Close size={18} />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+      {conditions.length > 0 && (
+        <div className="flex gap-2">
+          <input value={draft} onChange={(e) => setDraft(e.target.value)} onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), add())}
+            placeholder="Tambah kondisi, mis. Retak" aria-label="Kondisi baru" className={`${inputSm} flex-1`} />
+          <button type="button" onClick={add} className={btnSm}>Tambah</button>
+        </div>
+      )}
+      {conditions.length > 0 && !conditions.some((c) => c.ok) && (
+        <p className="text-xs text-danger-ink">Minimal satu kondisi harus “dihitung baik”.</p>
+      )}
+    </section>
   );
 }

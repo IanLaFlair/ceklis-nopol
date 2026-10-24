@@ -24,8 +24,12 @@ class Settings(BaseSettings):
     s3_secret_key: str = ""
     s3_region: str = "us-east-1"
 
-    nopol_engine_url: str = ""
-    nopol_engine_token: str = ""
+    # Scan plat lewat API Nopol (PRD §9). Isi salah satu: NOPOL_API_TOKEN, atau NOPOL_EMAIL + NOPOL_PASSWORD.
+    nopol_api_url: str = "https://api.nopol-lpr.com"
+    nopol_recognize_path: str = "/api/playground/recognize"
+    nopol_api_token: str = ""
+    nopol_email: str = ""
+    nopol_password: str = ""
     plate_confirm_threshold: float = 0.8
 
     photo_max_px: int = 1600
