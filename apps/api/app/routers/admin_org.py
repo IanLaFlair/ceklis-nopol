@@ -8,7 +8,7 @@ from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import selectinload
 
-from app.core.deps import DB, AdminUser, ManagerUser, device_of
+from app.core.deps import DB, AdminUser, ManagerUser, StaffManagerUser, device_of
 from app.core.security import decrypt_pin, encrypt_pin, hash_secret
 from app.core.timeutil import day_bounds, today
 from app.models import (
@@ -26,6 +26,17 @@ from app.services import activity, scope
 from app.services.plates import normalize_phone
 
 router = APIRouter(prefix="/admin", tags=["admin-org"])
+
+
+def _site_supervisor_guard(db, user, target: User) -> None:
+    """Supervisor lokasi hanya boleh mengelola petugas yang bertugas di lokasinya (atau belum punya tugas)."""
+    if user.role != "supervisor":
+        return
+    if target.role != "petugas" or target.client_id != user.client_id:
+        raise HTTPException(403, "Supervisor hanya bisa mengelola petugas")
+    sites = set(db.scalars(select(Post.site_id).join(Assignment).where(Assignment.user_id == target.id)))
+    if sites - {user.site_id}:
+        raise HTTPException(403, "Petugas ini juga bertugas di lokasi lain. Minta admin klien.")
 
 
 def _own_client(user, client_id: int | None) -> None:
@@ -328,8 +339,10 @@ def list_users(user: AdminUser, db: DB, role: str | None = None, q: str | None =
 
 
 @router.post("/users", status_code=201)
-def create_user(body: UserIn, user: ManagerUser, request: Request, db: DB):
-    """Undang petugas: PIN 6 digit dibuat sistem dan hanya ditampilkan sekali."""
+def create_user(body: UserIn, user: StaffManagerUser, request: Request, db: DB):
+    """Tambah user. Petugas mendapat PIN 6 digit dari sistem."""
+    if user.role == "supervisor" and body.role != "petugas":
+        raise HTTPException(403, "Supervisor hanya bisa menambah petugas")
     _guard_role(user, body.role)
     client_id = body.client_id if user.role == "super_admin" else user.client_id
     if body.role != "super_admin" and client_id is None:
@@ -372,12 +385,15 @@ def create_user(body: UserIn, user: ManagerUser, request: Request, db: DB):
 
 
 @router.patch("/users/{user_id}")
-def update_user(user_id: int, body: UserPatch, user: ManagerUser, request: Request, db: DB):
+def update_user(user_id: int, body: UserPatch, user: StaffManagerUser, request: Request, db: DB):
     u = db.get(User, user_id)
     if not u:
         raise HTTPException(404, "User tidak ditemukan")
     if user.role != "super_admin":
         _own_client(user, u.client_id)
+    _site_supervisor_guard(db, user, u)
+    if user.role == "supervisor" and body.model_dump(exclude_unset=True, exclude={"reset_pin", "active"}):
+        raise HTTPException(403, "Supervisor hanya bisa reset PIN atau menonaktifkan petugas")
     data = body.model_dump(exclude_unset=True, exclude={"reset_pin", "password"})
     if "role" in data:
         _guard_role(user, data["role"])
@@ -401,12 +417,13 @@ def update_user(user_id: int, body: UserPatch, user: ManagerUser, request: Reque
 
 
 @router.get("/users/{user_id}/pin")
-def view_pin(user_id: int, user: ManagerUser, request: Request, db: DB):
+def view_pin(user_id: int, user: StaffManagerUser, request: Request, db: DB):
     u = db.get(User, user_id)
     if not u or not u.pin_hash:
         raise HTTPException(404, "User ini tidak punya PIN")
     if user.role != "super_admin":
         _own_client(user, u.client_id)
+    _site_supervisor_guard(db, user, u)
     pin = decrypt_pin(u.pin_encrypted)
     if pin is None:
         raise HTTPException(409, "PIN lama tidak tersimpan. Klik Reset PIN untuk membuat PIN baru.")
@@ -454,6 +471,10 @@ def _check_assignment(db, user, user_id: int, post_id: int, role_on_post: str) -
     _own_client(user, post.site.client_id)
     if target.client_id not in (None, post.site.client_id):
         raise HTTPException(422, "User ini milik klien lain")
+    if user.role == "supervisor":
+        if post.site_id != user.site_id or role_on_post != "petugas":
+            raise HTTPException(403, "Supervisor hanya bisa menugaskan petugas di lokasinya")
+        _site_supervisor_guard(db, user, target)
     if role_on_post == "supervisor" and target.role not in ("supervisor", "client_admin", "super_admin"):
         raise HTTPException(422, "Hanya user berperan supervisor yang bisa jadi supervisor pos")
 
@@ -475,7 +496,7 @@ def list_assignments(user: AdminUser, db: DB, post_id: int | None = None, user_i
 
 
 @router.post("/assignments", status_code=201)
-def create_assignment(body: AssignmentIn, user: ManagerUser, request: Request, db: DB):
+def create_assignment(body: AssignmentIn, user: StaffManagerUser, request: Request, db: DB):
     _check_assignment(db, user, body.user_id, body.post_id, body.role_on_post)
     a = Assignment(**body.model_dump())
     db.add(a)
@@ -487,10 +508,12 @@ def create_assignment(body: AssignmentIn, user: ManagerUser, request: Request, d
 
 
 @router.patch("/assignments/{assignment_id}")
-def update_assignment(assignment_id: int, body: AssignmentPatch, user: ManagerUser, db: DB):
+def update_assignment(assignment_id: int, body: AssignmentPatch, user: StaffManagerUser, db: DB):
     a = db.get(Assignment, assignment_id)
     if not a:
         raise HTTPException(404, "Penugasan tidak ditemukan")
+    if user.role == "supervisor" and a.post.site_id != user.site_id:
+        raise HTTPException(403, "Di luar lokasi kamu")
     data = body.model_dump(exclude_unset=True)
     _check_assignment(db, user, a.user_id, data.get("post_id", a.post_id), data.get("role_on_post", a.role_on_post))
     for k, v in data.items():
@@ -501,11 +524,13 @@ def update_assignment(assignment_id: int, body: AssignmentPatch, user: ManagerUs
 
 
 @router.delete("/assignments/{assignment_id}", status_code=204)
-def delete_assignment(assignment_id: int, user: ManagerUser, request: Request, db: DB):
+def delete_assignment(assignment_id: int, user: StaffManagerUser, request: Request, db: DB):
     a = db.get(Assignment, assignment_id)
     if not a:
         return
     _own_client(user, a.post.site.client_id)
+    if user.role == "supervisor" and a.post.site_id != user.site_id:
+        raise HTTPException(403, "Di luar lokasi kamu")
     activity.log(db, user, "assignment_deleted", "assignment", a.id, post_id=a.post_id, device=device_of(request))
     db.delete(a)
     db.commit()

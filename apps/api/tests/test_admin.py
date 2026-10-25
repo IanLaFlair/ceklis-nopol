@@ -144,3 +144,27 @@ def test_hapus_template_dan_mulus_selalu_kondisi_normal(world):
     assert ops.get(f"/api/admin/templates/{tpl['id']}").status_code == 404
     r = ops.patch(f"/api/admin/sites/{world.site.id}", json={"template_id": tpl["id"]})
     assert r.status_code == 422
+
+
+def test_supervisor_lokasi_bisa_kelola_petugas_di_lokasinya(world):
+    ops = login_admin("ops@x.id", "rahasia-ops")
+    ops.post("/api/admin/users", json={"name": "Monica", "role": "supervisor", "email": "monica@x.id",
+                                       "password": "rahasia-monica", "site_id": world.site.id})
+    monica = login_admin("monica@x.id", "rahasia-monica")
+
+    # Tambah petugas + tugaskan ke pos di lokasinya
+    u = monica.post("/api/admin/users", json={"name": "Dodi", "role": "petugas", "phone": "0813 0000 0009"}).json()
+    assert len(u["pin"]) == 6
+    a = monica.post("/api/admin/assignments", json={"user_id": u["id"], "post_id": world.lobby1.id})
+    assert a.status_code == 201
+    assert monica.patch(f"/api/admin/assignments/{a.json()['id']}", json={"shift_start": "15:00"}).status_code == 200
+    assert monica.get(f"/api/admin/users/{u['id']}/pin").json()["pin"] == u["pin"]
+    assert len(monica.patch(f"/api/admin/users/{u['id']}", json={"reset_pin": True}).json()["pin"]) == 6
+    assert monica.patch(f"/api/admin/users/{u['id']}", json={"active": False}).status_code == 200
+
+    # Batasan: tidak bisa buat supervisor/admin, ubah nama, atau menyentuh lokasi/petugas lain
+    assert monica.post("/api/admin/users", json={"name": "Xena", "role": "supervisor", "phone": "0813 0000 0010"}).status_code == 403
+    assert monica.patch(f"/api/admin/users/{u['id']}", json={"name": "Dodi B"}).status_code == 403
+    assert monica.post("/api/admin/assignments", json={"user_id": u["id"], "post_id": world.tsm_lobby.id}).status_code == 403
+    assert monica.patch(f"/api/admin/users/{world.hendra.id}", json={"reset_pin": True}).status_code == 403
+    assert monica.post("/api/admin/posts", json={"site_id": world.site.id, "name": "Lobby X"}).status_code == 403

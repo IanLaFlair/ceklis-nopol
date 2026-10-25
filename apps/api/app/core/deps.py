@@ -52,5 +52,13 @@ def manager_user(user: CurrentUser) -> User:
     return user
 
 
+def staff_manager_user(user: CurrentUser) -> User:
+    """Mengelola petugas: admin, atau supervisor per lokasi (hanya petugas di lokasinya)."""
+    if user.role in ("super_admin", "client_admin") or (user.role == "supervisor" and user.site_id):
+        return user
+    raise HTTPException(status.HTTP_403_FORBIDDEN, "Khusus admin / supervisor lokasi")
+
+
 AdminUser = Annotated[User, Depends(admin_user)]
 ManagerUser = Annotated[User, Depends(manager_user)]
+StaffManagerUser = Annotated[User, Depends(staff_manager_user)]

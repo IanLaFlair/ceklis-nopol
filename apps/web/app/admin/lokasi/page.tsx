@@ -85,7 +85,7 @@ export default function LokasiPage() {
 
         <section aria-label="Detail lokasi" className="min-w-0 flex-[2.4_1_600px]">
           {siteId ? (
-            <SiteDetail id={siteId} manage={manage} open={setModal} />
+            <SiteDetail id={siteId} manage={manage} staff={manage || (me.role === "supervisor" && !!me.site_id)} open={setModal} />
           ) : (
             <p className="p-8 text-center text-muted">{sites ? "Belum ada lokasi. Tambahkan lokasi pertama." : ""}</p>
           )}
@@ -108,7 +108,8 @@ export default function LokasiPage() {
   );
 }
 
-function SiteDetail({ id, manage, open }: { id: number; manage: boolean; open: (m: Modal) => void }) {
+/** manage = ubah lokasi/pos (admin); staff = kelola petugas (admin + supervisor lokasi). */
+function SiteDetail({ id, manage, staff, open }: { id: number; manage: boolean; staff: boolean; open: (m: Modal) => void }) {
   const { mutate } = useSWRConfig();
   const key = `/admin/sites/${id}/overview`;
   const { data, error } = useSWR<SiteOverview>(key, fetcher, { refreshInterval: 15000 });
@@ -193,7 +194,7 @@ function SiteDetail({ id, manage, open }: { id: number; manage: boolean; open: (
       <section className={`${card} overflow-hidden`}>
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#E6E6E0] px-5 py-4">
           <h2 className={h2}>Petugas di lokasi ini</h2>
-          {manage && (
+          {staff && (
             <button onClick={() => open({ kind: "invite" })} className={`${btnSm} border-[1.5px] border-ink bg-surface`}>Tambah petugas</button>
           )}
         </div>
@@ -206,7 +207,7 @@ function SiteDetail({ id, manage, open }: { id: number; manage: boolean; open: (
                 <th className="px-3 py-2.5 font-medium">Pos</th>
                 <th className="px-3 py-2.5 text-right font-medium">Pemeriksaan hari ini</th>
                 <th className="px-3 py-2.5 font-medium">Terakhir aktif</th>
-                {manage && <th className="px-5 py-2.5 font-medium">Aksi</th>}
+                {staff && <th className="px-5 py-2.5 font-medium">Aksi</th>}
               </tr>
             </thead>
             <tbody>
@@ -215,7 +216,7 @@ function SiteDetail({ id, manage, open }: { id: number; manage: boolean; open: (
                   <td className="px-5 py-3">
                     <span className="font-semibold">{st.user.name}</span>
                     <span className="block text-xs whitespace-nowrap text-muted">{st.user.staff_code ?? ""}{st.user.phone ? ` · ${st.user.phone}` : ""}</span>
-                    {manage && st.user.has_pin && <PinReveal userId={st.user.id} />}
+                    {staff && st.user.has_pin && (manage || st.role === "petugas") && <PinReveal userId={st.user.id} />}
                     {st.user.email && !st.user.has_pin && <span className="block text-xs whitespace-nowrap text-muted">{st.user.email}</span>}
                   </td>
                   <td className="px-3 py-3">
@@ -229,7 +230,7 @@ function SiteDetail({ id, manage, open }: { id: number; manage: boolean; open: (
                       <div key={a.id} className="flex flex-wrap items-center gap-1.5">
                         <span>{a.post_name}{a.role_on_post === "supervisor" ? " (spv)" : ""}</span>
                         {a.shift && <span className="text-xs text-muted">{a.shift}</span>}
-                        {manage && (
+                        {staff && (manage || st.role === "petugas") && (
                           <button onClick={() => open({ kind: "assignment", a })} className="min-h-8 text-xs underline">ubah</button>
                         )}
                       </div>
@@ -237,9 +238,9 @@ function SiteDetail({ id, manage, open }: { id: number; manage: boolean; open: (
                   </td>
                   <td className="px-3 py-3 text-right font-mono">{st.checks_today}</td>
                   <td className="px-3 py-3 text-muted">{st.last_active_at ? dateTime(st.last_active_at) : "belum pernah"}</td>
-                  {manage && (
+                  {staff && (
                     <td className="px-5 py-2">
-                      <div className="flex flex-col items-start">
+                      {(manage || st.role === "petugas") && <div className="flex flex-col items-start">
                         {st.user.has_pin && (
                           <button className="min-h-9 text-xs underline"
                             onClick={() => run(async () => {
@@ -257,7 +258,7 @@ function SiteDetail({ id, manage, open }: { id: number; manage: boolean; open: (
                           }}>
                           {st.active ? "Nonaktifkan" : "Aktifkan"}
                         </button>
-                      </div>
+                      </div>}
                     </td>
                   )}
                 </tr>
@@ -437,7 +438,9 @@ function InviteDialog({ siteId, onClose, onPin }: {
   const set = (k: keyof typeof f, v: string | number) => setF((x) => ({ ...x, [k]: v }));
   const postId = f.post_id || ov?.posts[0]?.id || 0;
   const { busy, err, save } = useSave(() => mutate(`/admin/sites/${siteId}/overview`));
-  const candidates = (users ?? []).filter((u) => u.active && (u.role === "petugas" || u.role === "supervisor"));
+  const me = useAdmin();
+  const isSupervisor = me.role === "supervisor";
+  const candidates = (users ?? []).filter((u) => u.active && (u.role === "petugas" || (!isSupervisor && u.role === "supervisor")));
   const existing = candidates.find((u) => u.id === userId);
   // Supervisor baru = per lokasi: login dashboard dengan email + password, melihat semua pos, tanpa pos & shift
   const siteSupervisor = mode === "new" && f.role === "supervisor";
@@ -497,9 +500,9 @@ function InviteDialog({ siteId, onClose, onPin }: {
             <div className="grid grid-cols-2 gap-2.5">
               <Field label={siteSupervisor ? "Nomor HP (opsional)" : "Nomor HP"}><input required={!siteSupervisor} inputMode="tel" value={f.phone} onChange={(e) => set("phone", e.target.value)} placeholder="0812…" className={inputSm} /></Field>
               <Field label="Peran">
-                <select value={f.role} onChange={(e) => set("role", e.target.value)} className={inputSm}>
+                <select value={f.role} onChange={(e) => set("role", e.target.value)} disabled={isSupervisor} className={inputSm}>
                   <option value="petugas">Petugas</option>
-                  <option value="supervisor">Supervisor</option>
+                  {!isSupervisor && <option value="supervisor">Supervisor</option>}
                 </select>
               </Field>
             </div>
