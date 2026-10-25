@@ -9,6 +9,7 @@ import type { TxListItem } from "@/lib/types";
 import { PageHead, card } from "@/components/admin/shell";
 import { ScopePicker } from "@/components/admin/scope-picker";
 import { TxDetailView } from "@/components/admin/tx-detail";
+import { INCIDENTS_ENABLED } from "@/lib/features";
 import { Search } from "@/components/icons";
 import { ErrorNote, Plate, StatusBadge } from "@/components/ui";
 
@@ -16,7 +17,7 @@ const TABS = [
   { id: "all", label: "Semua" },
   { id: "parked", label: "Masih parkir" },
   { id: "done", label: "Selesai" },
-  { id: "incident", label: "Ada insiden" },
+  ...(INCIDENTS_ENABLED ? [{ id: "incident", label: "Ada insiden" }] : []),
 ] as const;
 
 interface ListRes {

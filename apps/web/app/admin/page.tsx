@@ -1,5 +1,6 @@
 "use client";
 
+import { INCIDENTS_ENABLED } from "@/lib/features";
 import Link from "next/link";
 import useSWR from "swr";
 import { fetcher } from "@/lib/api/client";
@@ -34,7 +35,7 @@ export default function DashboardPage() {
         </div>
         <Kpi label="Masuk hari ini" value={k?.in_today} />
         <Kpi label="Keluar hari ini" value={k?.out_today} />
-        <Kpi label="Insiden terbuka" value={k?.open_incidents} danger />
+        {INCIDENTS_ENABLED && <Kpi label="Insiden terbuka" value={k?.open_incidents} danger />}
         <Kpi label="Rata-rata durasi" value={k ? (k.avg_duration_minutes == null ? "–" : duration(k.avg_duration_minutes, true)) : undefined} />
       </div>
 
@@ -75,7 +76,7 @@ export default function DashboardPage() {
                 <th className="p-3 text-right font-medium">Masih parkir</th>
                 <th className="p-3 text-right font-medium">Masuk</th>
                 <th className="p-3 text-right font-medium">Keluar</th>
-                <th className="p-3 text-right font-medium">Insiden</th>
+                {INCIDENTS_ENABLED && <th className="p-3 text-right font-medium">Insiden</th>}
                 <th className="px-[22px] py-3 font-medium">Petugas aktif</th>
               </tr>
             </thead>
@@ -88,7 +89,7 @@ export default function DashboardPage() {
                   <td className="p-3 text-right font-mono">{r.parked}</td>
                   <td className="p-3 text-right font-mono">{r.in}</td>
                   <td className="p-3 text-right font-mono">{r.out}</td>
-                  <td className={`p-3 text-right font-mono ${r.incidents ? "text-danger-ink" : ""}`}>{r.incidents}</td>
+                  {INCIDENTS_ENABLED && <td className={`p-3 text-right font-mono ${r.incidents ? "text-danger-ink" : ""}`}>{r.incidents}</td>}
                   <td className="px-[22px] py-3 text-muted">{r.staff.length ? r.staff.join(", ") : "-"}</td>
                 </tr>
               ))}

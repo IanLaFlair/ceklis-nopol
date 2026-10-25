@@ -39,7 +39,7 @@ export default function AdminLogin() {
           <Logo sub="Admin · by nopol" />
           <div className="flex flex-col gap-2">
             <h1 className="font-display text-[30px] leading-[1.05] font-bold tracking-[-0.03em]">Dashboard admin</h1>
-            <p className="text-[15px] leading-normal text-[#B4B8B3]">Pantau semua lokasi, transaksi, dan insiden.</p>
+            <p className="text-[15px] leading-normal text-[#B4B8B3]">Pantau semua lokasi, transaksi, dan petugas.</p>
           </div>
         </div>
         <div aria-hidden="true" className="hazard h-3" />

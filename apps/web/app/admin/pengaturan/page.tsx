@@ -15,7 +15,7 @@ import { Badge, ErrorNote, Spinner } from "@/components/ui";
 const ACCESS: [Role, string][] = [
   ["super_admin", "Semua klien, lokasi, template, dan user."],
   ["client_admin", "Semua lokasi milik satu klien (mis. Pakuwon Group): lokasi, pos, petugas, template klien, laporan."],
-  ["supervisor", "Satu lokasi: masuk dashboard dengan email & password, lihat semua pos di lokasinya dan memutuskan insiden. Ditambahkan dari Lokasi & Petugas."],
+  ["supervisor", "Satu lokasi: masuk dashboard dengan email & password, lihat semua pos dan kelola petugas di lokasinya. Ditambahkan dari Lokasi & Petugas."],
   ["petugas", "Aplikasi petugas (PWA) saja: check in / check out di pos yang ditugaskan."],
 ];
 

@@ -1,5 +1,6 @@
 "use client";
 
+import { INCIDENTS_ENABLED } from "@/lib/features";
 import { useState } from "react";
 import useSWR from "swr";
 import { fetcher } from "@/lib/api/client";
@@ -30,13 +31,15 @@ export default function LaporanPage() {
 
   const downloads = [
     { href: `${BASE}/admin/reports/transactions.csv?${qs}`, label: "Transaksi (CSV)", sub: "Semua check in dalam periode: tiket cek list, plat, petugas, durasi, status." },
-    { href: `${BASE}/admin/reports/incidents.csv?${qs}`, label: "Insiden (CSV)", sub: "Insiden, bagian, catatan petugas, keputusan supervisor." },
-    { href: `${BASE}/admin/reports/summary.pdf?${qs}`, label: "Rekap (PDF)", sub: "Ringkasan per lokasi/pos, rata-rata durasi, daftar insiden." },
+    ...(INCIDENTS_ENABLED
+      ? [{ href: `${BASE}/admin/reports/incidents.csv?${qs}`, label: "Insiden (CSV)", sub: "Insiden, bagian, catatan petugas, keputusan supervisor." }]
+      : []),
+    { href: `${BASE}/admin/reports/summary.pdf?${qs}`, label: "Rekap (PDF)", sub: "Ringkasan per lokasi/pos dan rata-rata durasi." },
   ];
 
   return (
     <>
-      <PageHead title="Laporan" sub="Rekap transaksi, durasi parkir, dan insiden.">
+      <PageHead title="Laporan" sub="Rekap transaksi dan durasi parkir.">
         <ScopePicker />
       </PageHead>
       {error && <ErrorNote>{error.message}</ErrorNote>}
@@ -72,7 +75,7 @@ export default function LaporanPage() {
                 ["Semua transaksi tercatat", tx?.counts.all],
                 ["Masih parkir", tx?.counts.parked],
                 ["Selesai", tx?.counts.done],
-                ["Ada insiden (belum selesai)", tx?.counts.incident],
+                ...(INCIDENTS_ENABLED ? [["Ada insiden (belum selesai)", tx?.counts.incident] as const] : []),
                 ["Masuk hari ini", stats?.kpi.in_today],
                 ["Keluar hari ini", stats?.kpi.out_today],
                 ["Rata-rata durasi hari ini", stats ? duration(stats.kpi.avg_duration_minutes) : undefined],

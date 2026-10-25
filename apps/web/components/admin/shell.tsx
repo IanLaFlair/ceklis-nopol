@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { createContext, useContext, useEffect, useState } from "react";
 import useSWR, { useSWRConfig } from "swr";
+import { INCIDENTS_ENABLED } from "@/lib/features";
 import { api, ApiError, fetcher } from "@/lib/api/client";
 import { useScope, withScope } from "@/lib/admin/scope";
 import { ROLE_LABEL, initial } from "@/lib/format";
@@ -21,7 +22,7 @@ export function useAdmin(): User {
 const NAV = [
   { href: "/admin", label: "Dashboard", Icon: Dashboard },
   { href: "/admin/transaksi", label: "Transaksi", Icon: Car },
-  { href: "/admin/insiden", label: "Insiden / Komplain", Icon: Shield, badge: true },
+  ...(INCIDENTS_ENABLED ? [{ href: "/admin/insiden", label: "Insiden / Komplain", Icon: Shield, badge: true }] : []),
   { href: "/admin/lokasi", label: "Lokasi & Petugas", Icon: Pin },
   { href: "/admin/template", label: "Template Checklist", Icon: Clipboard },
   { href: "/admin/laporan", label: "Laporan", Icon: Chart },
@@ -63,7 +64,7 @@ function Frame({ user, children }: { user: User; children: React.ReactNode }) {
   const [scope] = useScope();
   const [open, setOpen] = useState(false);
   const { mutate } = useSWRConfig();
-  const { data: inc } = useSWR<{ pending: number }>("/admin/incidents?status=pending&limit=1", fetcher, {
+  const { data: inc } = useSWR<{ pending: number }>(INCIDENTS_ENABLED ? "/admin/incidents?status=pending&limit=1" : null, fetcher, {
     refreshInterval: 15000,
   });
 

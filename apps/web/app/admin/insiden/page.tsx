@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import useSWR, { useSWRConfig } from "swr";
 import { api, ApiError, fetcher } from "@/lib/api/client";
+import { INCIDENTS_ENABLED } from "@/lib/features";
 import { ACTION_LABEL, INCIDENT_STATUS } from "@/lib/admin/actions";
 import { useQueryParam, useScope } from "@/lib/admin/scope";
 import type { ActivityEntry, AdminIncident } from "@/lib/admin/types";
@@ -21,7 +23,7 @@ const FILTERS = [
   { id: "dismissed", label: "Tidak ada kerusakan" },
 ];
 
-export default function InsidenPage() {
+function InsidenPageContent() {
   const [scope] = useScope();
   const [status, setStatus] = useQueryParam("status");
   const [idParam, setId] = useQueryParam("id");
@@ -215,4 +217,13 @@ function IncidentView({ id, keep }: { id: number; keep: () => void }) {
       </div>
     </div>
   );
+}
+
+/** Fitur insiden disembunyikan sementara: URL lama diarahkan ke dashboard. */
+export default function InsidenPage() {
+  const router = useRouter();
+  useEffect(() => {
+    if (!INCIDENTS_ENABLED) router.replace("/admin");
+  }, [router]);
+  return INCIDENTS_ENABLED ? <InsidenPageContent /> : null;
 }
