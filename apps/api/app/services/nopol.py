@@ -111,7 +111,7 @@ class NopolClient:
         except httpx.HTTPError as e:
             raise NopolError(502, "Engine scan plat tidak merespons. Ketik manual.") from e
         if r.status_code == 401:
-            raise NopolError(502, "Akses ke Nopol ditolak. Cek kredensial NOPOL_* di server.")
+            raise NopolError(502, "Scan plat belum aktif (API key Nopol belum diatur admin). Ketik nomor polisi manual.")
         if r.status_code in (402, 403):
             # not_activated / subscription_inactive / license_offline_expired
             raise NopolError(503, "Lisensi engine scan plat tidak aktif. Ketik manual dan hubungi admin.")

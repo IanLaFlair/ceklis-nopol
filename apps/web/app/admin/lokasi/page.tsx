@@ -9,7 +9,7 @@ import type { AdminUserRow, AssignmentOut, SiteOut, SiteOverview, TemplateRow } 
 import { ROLE_LABEL, dateTime } from "@/lib/format";
 import { Dialog, Field } from "@/components/admin/dialog";
 import { PageHead, btnSm, card, h2, inputSm, useAdmin } from "@/components/admin/shell";
-import { Pin, Search } from "@/components/icons";
+import { Eye, EyeOff, Pin, Search } from "@/components/icons";
 import { Badge, ErrorNote, Spinner } from "@/components/ui";
 
 type Modal =
@@ -156,7 +156,7 @@ function SiteDetail({ id, manage, open }: { id: number; manage: boolean; open: (
         <div className="overflow-x-auto">
           <table className="w-full min-w-[620px] border-collapse text-sm">
             <thead>
-              <tr className="text-left text-xs tracking-[0.05em] text-muted uppercase">
+              <tr className="text-left text-xs tracking-[0.05em] whitespace-nowrap text-muted uppercase">
                 <th className="px-5 py-2.5 font-medium">Pos</th>
                 <th className="px-3 py-2.5 font-medium">Petugas</th>
                 <th className="px-3 py-2.5 font-medium">Supervisor</th>
@@ -194,13 +194,13 @@ function SiteDetail({ id, manage, open }: { id: number; manage: boolean; open: (
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#E6E6E0] px-5 py-4">
           <h2 className={h2}>Petugas di lokasi ini</h2>
           {manage && (
-            <button onClick={() => open({ kind: "invite" })} className={`${btnSm} border-[1.5px] border-ink bg-surface`}>Undang petugas</button>
+            <button onClick={() => open({ kind: "invite" })} className={`${btnSm} border-[1.5px] border-ink bg-surface`}>Tambah petugas</button>
           )}
         </div>
         <div className="overflow-x-auto">
           <table className="w-full min-w-[720px] border-collapse text-sm">
             <thead>
-              <tr className="text-left text-xs tracking-[0.05em] text-muted uppercase">
+              <tr className="text-left text-xs tracking-[0.05em] whitespace-nowrap text-muted uppercase">
                 <th className="px-5 py-2.5 font-medium">Nama</th>
                 <th className="px-3 py-2.5 font-medium">Peran</th>
                 <th className="px-3 py-2.5 font-medium">Pos</th>
@@ -214,7 +214,8 @@ function SiteDetail({ id, manage, open }: { id: number; manage: boolean; open: (
                 <tr key={st.user.id} className={`border-t border-line-2 align-top hover:bg-paper-2 ${st.active ? "" : "opacity-60"}`}>
                   <td className="px-5 py-3">
                     <span className="font-semibold">{st.user.name}</span>
-                    <span className="block text-xs text-muted">{st.user.staff_code ?? ""}{st.user.phone ? ` · ${st.user.phone}` : ""}</span>
+                    <span className="block text-xs whitespace-nowrap text-muted">{st.user.staff_code ?? ""}{st.user.phone ? ` · ${st.user.phone}` : ""}</span>
+                    {manage && (st.role === "petugas" || st.role === "supervisor") && <PinReveal userId={st.user.id} />}
                   </td>
                   <td className="px-3 py-3">
                     <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${st.role === "supervisor" ? "bg-ink text-on-ink" : "bg-paper-2 text-ink"}`}>
@@ -438,7 +439,7 @@ function InviteDialog({ siteId, onClose, onPin }: {
   const existing = candidates.find((u) => u.id === userId);
 
   return (
-    <Dialog title="Undang petugas" onClose={onClose} wide>
+    <Dialog title="Tambah petugas" onClose={onClose} wide>
       <div role="group" aria-label="Jenis" className="flex gap-2">
         {(["new", "existing"] as const).map((m) => (
           <button key={m} type="button" aria-pressed={mode === m} onClick={() => setMode(m)}
@@ -506,7 +507,7 @@ function InviteDialog({ siteId, onClose, onPin }: {
         </Field>
         <ShiftFields v={f} set={(k, v) => set(k, v)} />
         <ErrorNote>{err}</ErrorNote>
-        <Actions busy={busy} onClose={onClose} label={mode === "new" ? "Undang" : "Tugaskan"} />
+        <Actions busy={busy} onClose={onClose} label={mode === "new" ? "Tambah" : "Tugaskan"} />
       </form>
     </Dialog>
   );
@@ -559,6 +560,35 @@ function AssignmentDialog({ a, siteId, onClose }: { a: AssignmentOut; siteId: nu
   );
 }
 
+/** PIN tersembunyi; ikon mata mengambil PIN dari server (tercatat di log aktivitas). */
+function PinReveal({ userId }: { userId: number }) {
+  const [pin, setPin] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  async function toggle() {
+    if (pin) return setPin(null);
+    setBusy(true);
+    setErr(null);
+    try {
+      setPin((await api<{ pin: string }>(`/admin/users/${userId}/pin`)).pin);
+    } catch (e) {
+      setErr(e instanceof ApiError && e.status === 409 ? "PIN lama tidak tersimpan, klik Reset PIN" : errMsg(e));
+    } finally {
+      setBusy(false);
+    }
+  }
+  return (
+    <span className="mt-1 flex items-center gap-1.5 text-xs whitespace-nowrap text-muted">
+      PIN <span className="font-mono text-[13px] tracking-[0.15em] text-ink">{pin ?? "••••••"}</span>
+      <button onClick={toggle} disabled={busy} aria-label={pin ? "Sembunyikan PIN" : "Lihat PIN"}
+        className="flex size-7 items-center justify-center rounded-md text-muted hover:bg-paper hover:text-ink disabled:opacity-50">
+        {busy ? <Spinner /> : pin ? <EyeOff size={16} /> : <Eye size={16} />}
+      </button>
+      {err && <span className="whitespace-normal text-danger-ink">{err}</span>}
+    </span>
+  );
+}
+
 function PinDialog({ name, pin, phone, onClose }: { name: string; pin: string; phone: string | null; onClose: () => void }) {
   const [copied, setCopied] = useState(false);
   const origin = typeof window !== "undefined" ? window.location.origin : "";
@@ -567,7 +597,7 @@ function PinDialog({ name, pin, phone, onClose }: { name: string; pin: string; p
   if (digits.startsWith("0")) digits = "62" + digits.slice(1);
   return (
     <Dialog title="PIN petugas" onClose={onClose}>
-      <p className="text-sm text-muted">PIN untuk <strong className="text-ink">{name}</strong>. Hanya ditampilkan sekali — catat atau kirim sekarang.</p>
+      <p className="text-sm text-muted">PIN untuk <strong className="text-ink">{name}</strong>. Bisa dilihat lagi kapan saja lewat ikon mata di daftar petugas.</p>
       <div className="rounded-xl bg-ink py-4 text-center font-mono text-[32px] font-bold tracking-[0.3em] text-accent">{pin}</div>
       <div className="flex flex-wrap gap-2">
         <button data-autofocus onClick={async () => {

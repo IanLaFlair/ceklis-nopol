@@ -11,7 +11,7 @@ from datetime import time
 from sqlalchemy import select
 
 from app.core.db import SessionLocal
-from app.core.security import hash_secret
+from app.core.security import encrypt_pin, hash_secret
 from app.models import Assignment, ChecklistTemplate, Client, Post, Site, TemplateVersion, User
 from app.services.template_config import STANDAR_MOBIL
 
@@ -68,14 +68,15 @@ def seed_demo(db, tpl: ChecklistTemplate) -> None:
     _get_or_create(db, Post, site_id=tsmb.id, name="Lobby Utama")
 
     pin = hash_secret("123456")
+    pin_enc = encrypt_pin("123456")
     budi = _get_or_create(db, User, phone="081234567890", defaults={
-        "name": "Budi Santoso", "staff_code": "PTG-0214", "role": "petugas", "pin_hash": pin,
+        "name": "Budi Santoso", "staff_code": "PTG-0214", "role": "petugas", "pin_hash": pin, "pin_encrypted": pin_enc,
         "client_id": pakuwon.id})
     rina = _get_or_create(db, User, phone="081234567891", defaults={
-        "name": "Rina Wulandari", "staff_code": "PTG-0215", "role": "petugas", "pin_hash": pin,
+        "name": "Rina Wulandari", "staff_code": "PTG-0215", "role": "petugas", "pin_hash": pin, "pin_encrypted": pin_enc,
         "client_id": pakuwon.id})
     hendra = _get_or_create(db, User, phone="081234567892", defaults={
-        "name": "Hendra", "staff_code": "SPV-0031", "role": "supervisor", "pin_hash": pin,
+        "name": "Hendra", "staff_code": "SPV-0031", "role": "supervisor", "pin_hash": pin, "pin_encrypted": pin_enc,
         "email": "hendra@ceklis.local", "password_hash": hash_secret("ceklis-spv"), "client_id": pakuwon.id})
     _get_or_create(db, User, email="ops@pakuwon.local", defaults={
         "name": "Ops Pakuwon", "role": "client_admin", "password_hash": hash_secret("ceklis-klien"),

@@ -26,7 +26,7 @@ export function Dialog({ title, onClose, children, wide = false }: {
     <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:p-6">
       <button aria-label="Tutup" tabIndex={-1} className="absolute inset-0 bg-ink/50" onClick={onClose} />
       <div ref={box} role="dialog" aria-modal="true" aria-label={title}
-        className={`relative flex max-h-[92dvh] w-full flex-col overflow-hidden rounded-t-2xl bg-surface shadow-[0_16px_40px_rgba(14,16,15,.25)] sm:rounded-2xl ${wide ? "sm:max-w-[640px]" : "sm:max-w-[460px]"}`}>
+        className={`relative flex max-h-[calc(var(--admin-vh,100dvh)*0.92)] w-full flex-col overflow-hidden rounded-t-2xl bg-surface shadow-[0_16px_40px_rgba(14,16,15,.25)] sm:rounded-2xl ${wide ? "sm:max-w-[640px]" : "sm:max-w-[460px]"}`}>
         <div className="flex items-center justify-between gap-3 border-b border-line px-5 py-3">
           <h2 className="font-display text-lg font-bold">{title}</h2>
           <button onClick={onClose} aria-label="Tutup" className="flex size-11 items-center justify-center rounded-lg hover:bg-paper-2">

@@ -43,12 +43,12 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   if (path === "/admin/login") return <>{children}</>;
   if (error && !(error instanceof ApiError && error.status === 401)) {
     return (
-      <div className="flex min-h-dvh items-center justify-center p-6 text-center text-muted">
+      <div className="flex min-h-(--admin-vh) items-center justify-center p-6 text-center text-muted">
         <p>Server tidak terjangkau. {error.message}</p>
       </div>
     );
   }
-  if (!me || me.role === "petugas") return <div aria-busy="true" className="min-h-dvh bg-paper" />;
+  if (!me || me.role === "petugas") return <div aria-busy="true" className="min-h-(--admin-vh) bg-paper" />;
 
   return (
     <AdminCtx.Provider value={me}>
@@ -122,9 +122,9 @@ function Frame({ user, children }: { user: User; children: React.ReactNode }) {
   );
 
   return (
-    <div className="min-h-dvh bg-paper text-ink lg:flex">
+    <div className="min-h-(--admin-vh) bg-paper text-ink lg:flex">
       <div className="hidden w-[232px] shrink-0 bg-ink lg:block">
-        <div className="sticky top-0 h-dvh">{sidebar}</div>
+        <div className="sticky top-0 h-(--admin-vh)">{sidebar}</div>
       </div>
       {/* bar atas untuk layar kecil */}
       <div className="sticky top-0 z-30 flex items-center gap-3 bg-ink px-4 py-3 text-on-ink lg:hidden">

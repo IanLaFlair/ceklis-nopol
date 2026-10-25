@@ -84,3 +84,21 @@ def test_template_global_hanya_tampilkan_lokasi_klien_sendiri(world):
     root = login_admin("root@x.id", "rahasia-root")
     tpl = next(t for t in root.get("/api/admin/templates").json() if t["id"] == world.template.id)
     assert world.other_site.name in [s["name"] for s in tpl["used_by"]]
+
+
+def test_admin_bisa_lihat_pin_petugas_kapan_saja(world):
+    ops = login_admin("ops@x.id", "rahasia-ops")
+    u = ops.post("/api/admin/users", json={"name": "Udin", "role": "petugas", "phone": "0829 100 291"}).json()
+    assert ops.get(f"/api/admin/users/{u['id']}/pin").json()["pin"] == u["pin"]
+    # Setelah petugas ganti PIN, admin melihat PIN yang baru
+    from fastapi.testclient import TestClient
+
+    from app.main import app
+    udin = TestClient(app)
+    udin.post("/api/auth/petugas/login", json={"login": "0829100291", "pin": u["pin"]})
+    assert udin.post("/api/auth/pin", json={"old_pin": u["pin"], "new_pin": "135792"}).status_code == 204
+    assert ops.get(f"/api/admin/users/{u['id']}/pin").json()["pin"] == "135792"
+    # PIN lama (sebelum fitur ini) tidak tersimpan: minta reset
+    assert ops.get(f"/api/admin/users/{world.budi.id}/pin").status_code == 409
+    # Admin klien lain tidak boleh melihat
+    assert ops.get(f"/api/admin/users/{world.asep.id}/pin").status_code == 403

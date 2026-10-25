@@ -9,7 +9,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import selectinload
 
 from app.core.deps import DB, AdminUser, ManagerUser, device_of
-from app.core.security import hash_secret
+from app.core.security import decrypt_pin, encrypt_pin, hash_secret
 from app.core.timeutil import day_bounds, today
 from app.models import (
     ActivityLog,
@@ -338,7 +338,7 @@ def create_user(body: UserIn, user: ManagerUser, request: Request, db: DB):
     u = User(
         name=body.name.strip(), role=body.role, phone=phone, email=email, client_id=client_id,
         staff_code=(body.staff_code or "").strip().upper() or _next_staff_code(db),
-        pin_hash=hash_secret(pin) if pin else None,
+        pin_hash=hash_secret(pin) if pin else None, pin_encrypted=encrypt_pin(pin) if pin else None,
         password_hash=hash_secret(body.password) if body.password else None, active=True,
     )
     db.add(u)
@@ -372,12 +372,28 @@ def update_user(user_id: int, body: UserPatch, user: ManagerUser, request: Reque
     if body.reset_pin:
         pin = _new_pin()
         u.pin_hash = hash_secret(pin)
+        u.pin_encrypted = encrypt_pin(pin)
     if body.password:
         u.password_hash = hash_secret(body.password)
     activity.log(db, user, "user_updated", "user", u.id, device=device_of(request),
                  meta={**{k: v for k, v in data.items() if k != "email"}, "reset_pin": body.reset_pin})
     _commit(db, "Nomor HP atau email sudah dipakai")
     return {**user_out(u), "active": u.active, "pin": pin}
+
+
+@router.get("/users/{user_id}/pin")
+def view_pin(user_id: int, user: ManagerUser, request: Request, db: DB):
+    u = db.get(User, user_id)
+    if not u or not u.pin_hash:
+        raise HTTPException(404, "User ini tidak punya PIN")
+    if user.role != "super_admin":
+        _own_client(user, u.client_id)
+    pin = decrypt_pin(u.pin_encrypted)
+    if pin is None:
+        raise HTTPException(409, "PIN lama tidak tersimpan. Klik Reset PIN untuk membuat PIN baru.")
+    activity.log(db, user, "pin_viewed", "user", u.id, device=device_of(request))
+    db.commit()
+    return {"pin": pin}
 
 
 # ---------- penugasan ----------

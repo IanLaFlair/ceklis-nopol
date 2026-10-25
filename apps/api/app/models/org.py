@@ -47,6 +47,8 @@ class User(Base):
     phone: Mapped[str | None] = mapped_column(String(32), unique=True)
     email: Mapped[str | None] = mapped_column(String(254), unique=True)
     pin_hash: Mapped[str | None] = mapped_column(String(100))
+    # Salinan PIN terenkripsi (kunci dari SESSION_SECRET) agar admin bisa melihat PIN petugas kapan saja
+    pin_encrypted: Mapped[str | None] = mapped_column(Text)
     password_hash: Mapped[str | None] = mapped_column(String(100))
     role: Mapped[str] = mapped_column(String(20))
     client_id: Mapped[int | None] = mapped_column(ForeignKey("clients.id"))

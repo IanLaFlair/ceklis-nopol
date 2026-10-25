@@ -6,8 +6,10 @@ export const metadata: Metadata = { title: { default: "Admin", template: "%s · 
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   return (
-    <Suspense fallback={<div className="min-h-dvh bg-paper" />}>
-      <AdminShell>{children}</AdminShell>
-    </Suspense>
+    <div className="admin-zoom">
+      <Suspense fallback={<div className="min-h-(--admin-vh) bg-paper" />}>
+        <AdminShell>{children}</AdminShell>
+      </Suspense>
+    </div>
   );
 }

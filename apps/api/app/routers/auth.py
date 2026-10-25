@@ -8,7 +8,7 @@ from sqlalchemy import or_, select
 
 from app.core.config import get_settings
 from app.core.deps import COOKIE_NAME, DB, CurrentUser, device_of
-from app.core.security import hash_secret, new_session_token, token_digest, verify_secret
+from app.core.security import encrypt_pin, hash_secret, new_session_token, token_digest, verify_secret
 from app.core.timeutil import now
 from app.models import ADMIN_ROLES, User, UserSession
 from app.routers.me import user_out
@@ -108,6 +108,7 @@ def change_pin(body: ChangePin, user: CurrentUser, request: Request, db: DB):
     if body.new_pin == body.old_pin or len(set(body.new_pin)) == 1:
         raise HTTPException(400, "Pilih PIN baru yang berbeda dan tidak berulang")
     user.pin_hash = hash_secret(body.new_pin)
+    user.pin_encrypted = encrypt_pin(body.new_pin)
     activity.log(db, user, "pin_changed", "user", user.id, device=device_of(request))
     db.commit()
 

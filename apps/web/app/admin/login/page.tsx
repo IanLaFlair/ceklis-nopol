@@ -33,8 +33,9 @@ export default function AdminLogin() {
   }
 
   return (
-    <div className="flex min-h-dvh items-center justify-center bg-paper p-4">
-      <div className="w-full max-w-[440px] overflow-hidden rounded-2xl border border-line bg-surface shadow-[0_16px_40px_rgba(14,16,15,.08)]">
+    <div className="relative flex min-h-(--admin-vh) items-center justify-center bg-ink bg-[url(/login-bg.jpg)] bg-cover bg-center p-4">
+      <div aria-hidden="true" className="absolute inset-0 bg-ink/60" />
+      <div className="relative w-full max-w-[440px] overflow-hidden rounded-2xl border border-line bg-surface shadow-[0_24px_60px_rgba(0,0,0,.45)]">
         <div className="flex flex-col gap-6 bg-ink px-6 pb-7 pt-8 text-on-ink">
           <Logo sub="Admin · by nopol" />
           <div className="flex flex-col gap-2">

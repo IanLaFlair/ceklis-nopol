@@ -35,10 +35,11 @@ function LoginForm() {
   }
 
   return (
-    <div className="mx-auto flex min-h-dvh max-w-[480px] flex-col bg-paper">
-      <div className="flex flex-col gap-7 bg-ink px-6 pb-8 pt-[max(env(safe-area-inset-top),48px)] text-on-ink">
+    // Saat keyboard HP terbuka (ada input fokus), judul besar disembunyikan supaya kolom PIN & tombol Masuk tidak tertutup
+    <div className="group mx-auto flex min-h-dvh max-w-[480px] flex-col bg-paper">
+      <div className="flex flex-col gap-7 bg-ink px-6 pb-8 pt-[max(env(safe-area-inset-top),48px)] text-on-ink group-has-[input:focus]:pb-5 group-has-[input:focus]:pt-[max(env(safe-area-inset-top),20px)]">
         <Logo />
-        <div className="flex flex-col gap-2.5">
+        <div className="flex flex-col gap-2.5 group-has-[input:focus]:hidden">
           <h1 className="font-display text-[34px] leading-[1.05] font-bold tracking-[-0.03em]">
             Checklist valet,
             <br />
@@ -49,7 +50,7 @@ function LoginForm() {
       </div>
       <div aria-hidden="true" className="hazard h-3" />
 
-      <form onSubmit={submit} className="flex flex-1 flex-col gap-[18px] px-6 pb-6 pt-7">
+      <form onSubmit={submit} className="flex flex-1 flex-col gap-[18px] px-6 pb-6 pt-7 group-has-[input:focus]:pt-5">
         <label className="flex flex-col gap-2 text-sm font-semibold">
           ID petugas atau nomor HP
           <input value={login} onChange={(e) => setLogin(e.target.value)} required autoComplete="username" inputMode="text"
