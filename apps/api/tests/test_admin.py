@@ -55,6 +55,18 @@ def test_stats_dan_laporan(world):
     pdf = ops.get("/api/admin/reports/summary.pdf")
     assert pdf.status_code == 200 and pdf.content.startswith(b"%PDF")
 
+    import io
+
+    from openpyxl import load_workbook
+    x = ops.get("/api/admin/reports/transactions.xlsx")
+    assert x.status_code == 200 and "spreadsheetml" in x.headers["content-type"]
+    wb = load_workbook(io.BytesIO(x.content))
+    ws = wb["Transaksi"]
+    assert ws["A1"].value == "Nomor polisi" and ws.max_row == 3
+    assert "B 1234 ABC" in [c.value for c in ws["A"]]
+    assert hasattr(ws["D2"].value, "hour")  # tanggal asli, bukan teks
+    assert wb["Rekap per pos"].max_row >= 2
+
 
 def test_riwayat_petugas(world):
     c = login_petugas(world.budi)
@@ -168,3 +180,19 @@ def test_supervisor_lokasi_bisa_kelola_petugas_di_lokasinya(world):
     assert monica.post("/api/admin/assignments", json={"user_id": u["id"], "post_id": world.tsm_lobby.id}).status_code == 403
     assert monica.patch(f"/api/admin/users/{world.hendra.id}", json={"reset_pin": True}).status_code == 403
     assert monica.post("/api/admin/posts", json={"site_id": world.site.id, "name": "Lobby X"}).status_code == 403
+
+
+def test_pdf_per_transaksi(world):
+    c = login_petugas(world.budi)
+    tx = c.post("/api/transactions", json=checkin_payload(world)).json()
+    from datetime import UTC, datetime
+
+    from app.core.db import SessionLocal
+    from app.models import Photo
+    with SessionLocal() as db:  # foto ditandai terunggah walau objeknya tidak ada di storage uji
+        db.query(Photo).filter(Photo.transaction_id == tx["id"]).update({"uploaded_at": datetime.now(UTC)})
+        db.commit()
+    ops = login_admin("ops@x.id", "rahasia-ops")
+    r = ops.get(f"/api/admin/reports/transactions/{tx['id']}.pdf")
+    assert r.status_code == 200 and r.content.startswith(b"%PDF")
+    assert ops.get(f"/api/admin/reports/transactions/{world.tsm_lobby.id + 9999}.pdf").status_code == 404

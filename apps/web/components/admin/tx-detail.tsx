@@ -48,7 +48,13 @@ export function TxDetailView({ id }: { id: number }) {
             <span className="text-[13px] text-on-ink-muted">{meta}</span>
           </span>
         </div>
-        <StatusBadge status={tx.status} />
+        <div className="flex items-center gap-2.5">
+          <StatusBadge status={tx.status} />
+          <a href={`${process.env.NEXT_PUBLIC_API_BASE_URL ?? "/api"}/admin/reports/transactions/${tx.id}.pdf`} download
+            className="flex min-h-9 items-center rounded-lg bg-accent px-3 text-[13px] font-bold whitespace-nowrap text-ink">
+            Unduh PDF
+          </a>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-[repeat(auto-fit,minmax(150px,1fr))]">

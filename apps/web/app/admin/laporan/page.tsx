@@ -30,11 +30,11 @@ export default function LaporanPage() {
   const invalid = from > to;
 
   const downloads = [
-    { href: `${BASE}/admin/reports/transactions.csv?${qs}`, label: "Transaksi (CSV)", sub: "Semua check in dalam periode: tiket cek list, plat, petugas, durasi, status." },
+    { href: `${BASE}/admin/reports/transactions.xlsx?${qs}`, label: "Transaksi (Excel)", sub: "Semua check in dalam periode: plat, lokasi, petugas masuk/keluar, durasi, status, kondisi, barang. Plus sheet rekap per pos." },
     ...(INCIDENTS_ENABLED
       ? [{ href: `${BASE}/admin/reports/incidents.csv?${qs}`, label: "Insiden (CSV)", sub: "Insiden, bagian, catatan petugas, keputusan supervisor." }]
       : []),
-    { href: `${BASE}/admin/reports/summary.pdf?${qs}`, label: "Rekap (PDF)", sub: "Ringkasan per lokasi/pos dan rata-rata durasi." },
+    { href: `${BASE}/admin/reports/summary.pdf?${qs}`, label: "Laporan (PDF)", sub: "Ringkasan, rekap per pos, dan rincian setiap transaksi dalam periode." },
   ];
 
   return (
