@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import useSWR from "swr";
 import { RejectedNotice } from "@/components/petugas/rejected-notice";
+import { PendingNotice } from "@/components/petugas/sync-status";
 import { Screen } from "@/components/petugas/shell";
 import { useSession } from "@/components/petugas/session";
 import { VehicleRow } from "@/components/petugas/vehicle-row";
@@ -81,6 +82,7 @@ export default function Beranda() {
       }
     >
       <RejectedNotice />
+      <PendingNotice />
       <div className="grid grid-cols-2 gap-3">
         <Link href="/checkin" className="tap flex min-h-[120px] flex-col justify-between rounded-[18px] bg-accent p-4 text-ink">
           <Plus size={30} />

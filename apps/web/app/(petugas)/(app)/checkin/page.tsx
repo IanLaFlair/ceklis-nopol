@@ -6,11 +6,11 @@ import { useMemo, useRef, useState } from "react";
 import { useCamera } from "@/components/petugas/camera";
 import { useCapture, Thumb, type Shot } from "@/components/petugas/photo-input";
 import { useSession } from "@/components/petugas/session";
+import { TxSyncStatus } from "@/components/petugas/sync-status";
 import { Camera, Check, Close, ScanPlate } from "@/components/icons";
 import { btnDark, btnGhost, btnPrimary, ErrorNote, field, label, Plate, Spinner, Tick } from "@/components/ui";
 import { scanPlate } from "@/lib/camera/scan";
 import { clock, displayPlate, normalizePlate, SIDE_LABEL } from "@/lib/format";
-import { useOnline } from "@/lib/offline/hooks";
 import { enqueueCheckin } from "@/lib/offline/queue";
 import { buildSummary, exteriorItems, insideItems, insideList, type InsideState } from "@/lib/summary";
 import { newTicketCode } from "@/lib/ticket";
@@ -26,8 +26,7 @@ const FALLBACK_CONDITIONS: ConditionOption[] = [
 
 export default function CheckinPage() {
   const router = useRouter();
-  const online = useOnline();
-  const { user, assignment, pending } = useSession();
+  const { user, assignment } = useSession();
   const active = assignment.active!;
   const template = assignment.template;
   const config = template?.config;
@@ -195,9 +194,7 @@ export default function CheckinPage() {
               </div>
             ))}
           </dl>
-          <p className="text-[13px] text-muted">
-            {online && !pending.total ? "Tersimpan di server." : "Tersimpan di HP, dikirim otomatis saat ada sinyal."}
-          </p>
+          <TxSyncStatus txClientId={ids.client} photoCount={Object.keys(itemPhotos).length + Object.keys(sidePhotos).length} />
         </main>
         <footer className="safe-bottom flex gap-2.5 border-t border-line bg-surface px-5 pt-3">
           <button onClick={again} className={btnGhost}>Check in lagi</button>
