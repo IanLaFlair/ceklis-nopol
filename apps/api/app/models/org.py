@@ -52,6 +52,8 @@ class User(Base):
     password_hash: Mapped[str | None] = mapped_column(String(100))
     role: Mapped[str] = mapped_column(String(20))
     client_id: Mapped[int | None] = mapped_column(ForeignKey("clients.id"))
+    # Supervisor per lokasi: melihat semua pos di lokasi ini (tanpa penugasan pos/shift)
+    site_id: Mapped[int | None] = mapped_column(ForeignKey("sites.id"), index=True)
     active: Mapped[bool] = mapped_column(Boolean, default=True)
     last_active_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

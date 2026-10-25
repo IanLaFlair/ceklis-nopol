@@ -13,6 +13,7 @@ export interface User {
   phone: string | null;
   email: string | null;
   client_id: number | null;
+  site_id?: number | null;
   has_pin: boolean;
 }
 

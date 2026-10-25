@@ -102,3 +102,27 @@ def test_admin_bisa_lihat_pin_petugas_kapan_saja(world):
     assert ops.get(f"/api/admin/users/{world.budi.id}/pin").status_code == 409
     # Admin klien lain tidak boleh melihat
     assert ops.get(f"/api/admin/users/{world.asep.id}/pin").status_code == 403
+
+
+def test_supervisor_per_lokasi_lihat_semua_pos_di_dashboard(world):
+    ops = login_admin("ops@x.id", "rahasia-ops")
+    lobby2 = ops.post("/api/admin/posts", json={"site_id": world.site.id, "name": "Lobby 2"}).json()
+    body = {"name": "Monica", "role": "supervisor", "email": "monica@x.id", "password": "rahasia-monica",
+            "site_id": world.site.id}
+    u = ops.post("/api/admin/users", json=body).json()
+    assert u["pin"] is None and u["site_id"] == world.site.id
+    # Lokasi klien lain ditolak
+    assert ops.post("/api/admin/users", json={**body, "email": "m2@x.id", "site_id": world.other_site.id}).status_code == 403
+
+    # Transaksi di pos lain pada lokasi yang sama tetap terlihat oleh supervisor
+    c = login_petugas(world.budi)
+    tx = c.post("/api/transactions", json=checkin_payload(world)).json()
+    monica = login_admin("monica@x.id", "rahasia-monica")
+    assert [s["id"] for s in monica.get("/api/admin/sites").json()] == [world.site.id]
+    ids = [t["id"] for t in monica.get("/api/admin/transactions").json()["items"]]
+    assert tx["id"] in ids
+    ov = monica.get(f"/api/admin/sites/{world.site.id}/overview").json()
+    assert {p["id"] for p in ov["posts"]} >= {lobby2["id"]}
+    row = next(r for r in ov["staff"] if r["user"]["name"] == "Monica")
+    assert row["posts"] == ["Semua pos"]
+    assert monica.get(f"/api/admin/sites/{world.other_site.id}/overview").status_code in (403, 404)

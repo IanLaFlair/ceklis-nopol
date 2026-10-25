@@ -33,7 +33,10 @@ def accessible_post_ids(db: Session, user: User) -> set[int] | None:
     if user.role == "client_admin":
         stmt = select(Post.id).join(Site).where(Site.client_id == user.client_id)
         return set(db.scalars(stmt))
-    return {a.post_id for a in active_assignments(db, user)}
+    ids = {a.post_id for a in active_assignments(db, user)}
+    if user.role == "supervisor" and user.site_id:
+        ids |= set(db.scalars(select(Post.id).where(Post.site_id == user.site_id)))
+    return ids
 
 
 def can_access_post(db: Session, user: User, post_id: int) -> bool:
@@ -47,6 +50,8 @@ def can_decide_on_post(db: Session, user: User, post_id: int) -> bool:
         return can_access_post(db, user, post_id)
     if user.role != "supervisor":
         return False
+    if user.site_id and db.scalar(select(Post.site_id).where(Post.id == post_id)) == user.site_id:
+        return True
     return any(a.post_id == post_id and a.role_on_post == "supervisor" for a in active_assignments(db, user))
 
 

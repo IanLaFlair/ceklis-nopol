@@ -258,6 +258,11 @@ def site_overview(site_id: int, user: AdminUser, db: DB):
         })
         row["posts"].append(a.post.name)
         row["assignments"].append(_assignment_out(a))
+    for u in db.scalars(select(User).where(User.site_id == site.id, User.role == "supervisor")):
+        staff.setdefault(u.id, {
+            "user": user_out(u), "role": u.role, "active": u.active, "posts": ["Semua pos"],
+            "checks_today": checks_today.get(u.id, 0), "last_active_at": u.last_active_at, "assignments": [],
+        })
     return {
         "site": {**_site_out(site), "client": {"id": site.client.id, "name": site.client.name},
                  "template": {"id": tpl.id, "name": tpl.name} if tpl else None},
@@ -275,6 +280,7 @@ class UserIn(BaseModel):
     email: str | None = None
     staff_code: str | None = Field(default=None, max_length=32)
     client_id: int | None = None
+    site_id: int | None = None
     password: str | None = Field(default=None, min_length=8)
 
 
@@ -330,13 +336,26 @@ def create_user(body: UserIn, user: ManagerUser, request: Request, db: DB):
         raise HTTPException(422, "Pilih klien untuk user ini")
     phone = normalize_phone(body.phone) if body.phone else None
     email = body.email.strip().lower() if body.email else None
-    if body.role in ("petugas", "supervisor") and not phone:
+    site_id = None
+    if body.role == "supervisor" and body.site_id:
+        # Supervisor per lokasi: masuk dashboard dengan email + password, melihat semua pos di lokasinya
+        site = db.get(Site, body.site_id)
+        if not site:
+            raise HTTPException(422, "Lokasi tidak ditemukan")
+        _own_client(user, site.client_id)
+        if site.client_id != client_id:
+            raise HTTPException(422, "Lokasi bukan milik klien ini")
+        if not email or not body.password:
+            raise HTTPException(422, "Email dan password wajib untuk supervisor")
+        site_id = site.id
+    elif body.role in ("petugas", "supervisor") and not phone:
         raise HTTPException(422, "Nomor HP wajib untuk petugas / supervisor")
     if body.role in ("super_admin", "client_admin") and not email:
         raise HTTPException(422, "Email wajib untuk admin")
-    pin = _new_pin() if body.role in ("petugas", "supervisor") else None
+    # Supervisor per lokasi tidak memakai aplikasi petugas, jadi tidak perlu PIN
+    pin = _new_pin() if body.role == "petugas" or (body.role == "supervisor" and not site_id) else None
     u = User(
-        name=body.name.strip(), role=body.role, phone=phone, email=email, client_id=client_id,
+        name=body.name.strip(), role=body.role, phone=phone, email=email, client_id=client_id, site_id=site_id,
         staff_code=(body.staff_code or "").strip().upper() or _next_staff_code(db),
         pin_hash=hash_secret(pin) if pin else None, pin_encrypted=encrypt_pin(pin) if pin else None,
         password_hash=hash_secret(body.password) if body.password else None, active=True,

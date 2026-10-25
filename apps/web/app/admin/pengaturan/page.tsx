@@ -15,7 +15,7 @@ import { Badge, ErrorNote, Spinner } from "@/components/ui";
 const ACCESS: [Role, string][] = [
   ["super_admin", "Semua klien, lokasi, template, dan user."],
   ["client_admin", "Semua lokasi milik satu klien (mis. Pakuwon Group): lokasi, pos, petugas, template klien, laporan."],
-  ["supervisor", "Pos yang ditugaskan: lihat transaksi pos itu dan memutuskan insiden. Bisa masuk aplikasi petugas dengan PIN."],
+  ["supervisor", "Satu lokasi: masuk dashboard dengan email & password, lihat semua pos di lokasinya dan memutuskan insiden. Ditambahkan dari Lokasi & Petugas."],
   ["petugas", "Aplikasi petugas (PWA) saja: check in / check out di pos yang ditugaskan."],
 ];
 
@@ -116,7 +116,7 @@ export default function PengaturanPage() {
         <PasswordForm />
       </div>
 
-      {creating && <CreateUser roles={roles.filter((r) => r !== "petugas")} onClose={() => setCreating(false)} onSaved={() => { setCreating(false); void mutate(key); }} />}
+      {creating && <CreateUser roles={roles.filter((r) => r !== "petugas" && r !== "supervisor")} onClose={() => setCreating(false)} onSaved={() => { setCreating(false); void mutate(key); }} />}
     </>
   );
 }
@@ -195,9 +195,6 @@ function CreateUser({ roles, onClose, onSaved }: { roles: Role[]; onClose: () =>
           </Field>
         )}
         <Field label="Email"><input type="email" required value={f.email} onChange={(e) => set("email", e.target.value)} className={inputSm} /></Field>
-        {f.role === "supervisor" && (
-          <Field label="Nomor HP" hint="Supervisor juga bisa masuk aplikasi petugas dengan PIN (dibuat otomatis)."><input required inputMode="tel" value={f.phone} onChange={(e) => set("phone", e.target.value)} className={inputSm} /></Field>
-        )}
         <Field label="Password awal" hint="Minimal 8 karakter."><input type="password" required minLength={8} autoComplete="new-password" value={f.password} onChange={(e) => set("password", e.target.value)} className={inputSm} /></Field>
         <ErrorNote>{err}</ErrorNote>
         <div className="flex justify-end gap-2">

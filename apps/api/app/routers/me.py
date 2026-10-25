@@ -16,7 +16,7 @@ router = APIRouter(tags=["me"])
 def user_out(u: User) -> dict:
     return {
         "id": u.id, "name": u.name, "role": u.role, "staff_code": u.staff_code, "phone": u.phone,
-        "email": u.email, "client_id": u.client_id, "has_pin": bool(u.pin_hash),
+        "email": u.email, "client_id": u.client_id, "site_id": u.site_id, "has_pin": bool(u.pin_hash),
     }
 
 

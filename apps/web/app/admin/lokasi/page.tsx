@@ -215,7 +215,8 @@ function SiteDetail({ id, manage, open }: { id: number; manage: boolean; open: (
                   <td className="px-5 py-3">
                     <span className="font-semibold">{st.user.name}</span>
                     <span className="block text-xs whitespace-nowrap text-muted">{st.user.staff_code ?? ""}{st.user.phone ? ` · ${st.user.phone}` : ""}</span>
-                    {manage && (st.role === "petugas" || st.role === "supervisor") && <PinReveal userId={st.user.id} />}
+                    {manage && st.user.has_pin && <PinReveal userId={st.user.id} />}
+                    {st.user.email && !st.user.has_pin && <span className="block text-xs whitespace-nowrap text-muted">{st.user.email}</span>}
                   </td>
                   <td className="px-3 py-3">
                     <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${st.role === "supervisor" ? "bg-ink text-on-ink" : "bg-paper-2 text-ink"}`}>
@@ -223,6 +224,7 @@ function SiteDetail({ id, manage, open }: { id: number; manage: boolean; open: (
                     </span>
                   </td>
                   <td className="px-3 py-3">
+                    {!st.assignments.length && st.posts.length > 0 && <span>{st.posts.join(", ")}</span>}
                     {st.assignments.map((a) => (
                       <div key={a.id} className="flex flex-wrap items-center gap-1.5">
                         <span>{a.post_name}{a.role_on_post === "supervisor" ? " (spv)" : ""}</span>
@@ -238,7 +240,7 @@ function SiteDetail({ id, manage, open }: { id: number; manage: boolean; open: (
                   {manage && (
                     <td className="px-5 py-2">
                       <div className="flex flex-col items-start">
-                        {(st.role === "petugas" || st.role === "supervisor") && (
+                        {st.user.has_pin && (
                           <button className="min-h-9 text-xs underline"
                             onClick={() => run(async () => {
                               const r = await api<{ pin: string }>(`/admin/users/${st.user.id}`, { method: "PATCH", json: { reset_pin: true } });
@@ -431,12 +433,14 @@ function InviteDialog({ siteId, onClose, onPin }: {
   const { data: users } = useSWR<AdminUserRow[]>("/admin/users", fetcher);
   const [mode, setMode] = useState<"new" | "existing">("new");
   const [userId, setUserId] = useState<number | "">("");
-  const [f, setF] = useState({ name: "", phone: "", role: "petugas", post_id: 0, shift_name: "Shift pagi", shift_start: "07:00", shift_end: "15:00" });
+  const [f, setF] = useState({ name: "", phone: "", email: "", password: "", role: "petugas", post_id: 0, shift_name: "Shift pagi", shift_start: "07:00", shift_end: "15:00" });
   const set = (k: keyof typeof f, v: string | number) => setF((x) => ({ ...x, [k]: v }));
   const postId = f.post_id || ov?.posts[0]?.id || 0;
   const { busy, err, save } = useSave(() => mutate(`/admin/sites/${siteId}/overview`));
   const candidates = (users ?? []).filter((u) => u.active && (u.role === "petugas" || u.role === "supervisor"));
   const existing = candidates.find((u) => u.id === userId);
+  // Supervisor baru = per lokasi: login dashboard dengan email + password, melihat semua pos, tanpa pos & shift
+  const siteSupervisor = mode === "new" && f.role === "supervisor";
 
   return (
     <Dialog title="Tambah petugas" onClose={onClose} wide>
@@ -456,6 +460,14 @@ function InviteDialog({ siteId, onClose, onPin }: {
           let pin: string | null = null;
           let phone: string | null = null;
           let name: string;
+          if (siteSupervisor) {
+            await api("/admin/users", {
+              method: "POST",
+              json: { name: f.name, email: f.email, password: f.password, phone: f.phone || null, role: "supervisor",
+                      site_id: siteId, client_id: ov?.site.client_id },
+            });
+            return { name: f.name, pin: null, phone: null };
+          }
           if (mode === "new") {
             const u = await api<{ id: number; pin: string | null; phone: string | null; name: string; role: string }>(
               "/admin/users", { method: "POST", json: { name: f.name, phone: f.phone, role: f.role, client_id: ov?.site.client_id } });
@@ -483,7 +495,7 @@ function InviteDialog({ siteId, onClose, onPin }: {
           <>
             <Field label="Nama"><input required minLength={2} value={f.name} onChange={(e) => set("name", e.target.value)} className={inputSm} /></Field>
             <div className="grid grid-cols-2 gap-2.5">
-              <Field label="Nomor HP"><input required inputMode="tel" value={f.phone} onChange={(e) => set("phone", e.target.value)} placeholder="0812…" className={inputSm} /></Field>
+              <Field label={siteSupervisor ? "Nomor HP (opsional)" : "Nomor HP"}><input required={!siteSupervisor} inputMode="tel" value={f.phone} onChange={(e) => set("phone", e.target.value)} placeholder="0812…" className={inputSm} /></Field>
               <Field label="Peran">
                 <select value={f.role} onChange={(e) => set("role", e.target.value)} className={inputSm}>
                   <option value="petugas">Petugas</option>
@@ -491,6 +503,17 @@ function InviteDialog({ siteId, onClose, onPin }: {
                 </select>
               </Field>
             </div>
+            {siteSupervisor && (
+              <>
+                <div className="grid grid-cols-2 gap-2.5">
+                  <Field label="Email"><input type="email" required value={f.email} onChange={(e) => set("email", e.target.value)} autoComplete="off" className={inputSm} /></Field>
+                  <Field label="Password awal" hint="Minimal 8 karakter."><input type="password" required minLength={8} value={f.password} onChange={(e) => set("password", e.target.value)} autoComplete="new-password" className={inputSm} /></Field>
+                </div>
+                <p className="rounded-lg bg-paper-2 px-3 py-2.5 text-[13px] leading-normal text-muted">
+                  Supervisor masuk di <strong className="text-ink">dashboard admin</strong> dengan email &amp; password, dan melihat <strong className="text-ink">semua pos</strong> di {ov?.site.name ?? "lokasi ini"}. Tidak perlu pos atau shift.
+                </p>
+              </>
+            )}
           </>
         ) : (
           <Field label="Petugas / supervisor">
@@ -500,12 +523,16 @@ function InviteDialog({ siteId, onClose, onPin }: {
             </select>
           </Field>
         )}
-        <Field label="Pos">
-          <select value={postId} onChange={(e) => set("post_id", Number(e.target.value))} className={inputSm}>
-            {ov?.posts.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-          </select>
-        </Field>
-        <ShiftFields v={f} set={(k, v) => set(k, v)} />
+        {!siteSupervisor && (
+          <>
+            <Field label="Pos">
+              <select value={postId} onChange={(e) => set("post_id", Number(e.target.value))} className={inputSm}>
+                {ov?.posts.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+              </select>
+            </Field>
+            <ShiftFields v={f} set={(k, v) => set(k, v)} />
+          </>
+        )}
         <ErrorNote>{err}</ErrorNote>
         <Actions busy={busy} onClose={onClose} label={mode === "new" ? "Tambah" : "Tugaskan"} />
       </form>
