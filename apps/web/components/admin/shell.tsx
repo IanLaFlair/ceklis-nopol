@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { createContext, useContext, useEffect, useState } from "react";
-import useSWR from "swr";
+import useSWR, { useSWRConfig } from "swr";
 import { api, ApiError, fetcher } from "@/lib/api/client";
 import { useScope, withScope } from "@/lib/admin/scope";
 import { ROLE_LABEL, initial } from "@/lib/format";
@@ -62,6 +62,7 @@ function Frame({ user, children }: { user: User; children: React.ReactNode }) {
   const router = useRouter();
   const [scope] = useScope();
   const [open, setOpen] = useState(false);
+  const { mutate } = useSWRConfig();
   const { data: inc } = useSWR<{ pending: number }>("/admin/incidents?status=pending&limit=1", fetcher, {
     refreshInterval: 15000,
   });
@@ -70,6 +71,8 @@ function Frame({ user, children }: { user: User; children: React.ReactNode }) {
 
   async function logout() {
     await api("/auth/logout", { method: "POST" }).catch(() => undefined);
+    // Buang semua data akun ini supaya akun berikutnya tidak melihatnya sekilas
+    await mutate(() => true, undefined, { revalidate: false });
     router.replace("/admin/login");
   }
 

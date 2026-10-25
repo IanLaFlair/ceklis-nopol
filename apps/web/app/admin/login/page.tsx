@@ -2,12 +2,15 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { useSWRConfig } from "swr";
 import { api, ApiError } from "@/lib/api/client";
 import { ArrowRight } from "@/components/icons";
 import { ErrorNote, Logo, Spinner } from "@/components/ui";
+import type { User } from "@/lib/types";
 
 export default function AdminLogin() {
   const router = useRouter();
+  const { mutate } = useSWRConfig();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -18,7 +21,9 @@ export default function AdminLogin() {
     setBusy(true);
     setError(null);
     try {
-      await api("/auth/admin/login", { method: "POST", json: { email, password } });
+      const user = await api<User>("/auth/admin/login", { method: "POST", json: { email, password } });
+      // Ganti cache /me (masih berisi 401 dari sebelum login) supaya shell admin tidak melempar balik ke login
+      await mutate("/me", user, { revalidate: false });
       router.replace("/admin");
     } catch (err) {
       setError(err instanceof ApiError ? (err.isNetwork ? "Tidak ada koneksi ke server." : err.message) : "Gagal masuk");
