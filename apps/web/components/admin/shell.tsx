@@ -24,10 +24,12 @@ const NAV = [
   { href: "/admin/transaksi", label: "Transaksi", Icon: Car },
   ...(INCIDENTS_ENABLED ? [{ href: "/admin/insiden", label: "Insiden / Komplain", Icon: Shield, badge: true }] : []),
   { href: "/admin/lokasi", label: "Lokasi & Petugas", Icon: Pin },
-  { href: "/admin/template", label: "Template Checklist", Icon: Clipboard },
+  { href: "/admin/template", label: "Template Checklist", Icon: Clipboard, adminOnly: true },
   { href: "/admin/laporan", label: "Laporan", Icon: Chart },
-  { href: "/admin/pengaturan", label: "Pengaturan", Icon: Gear },
+  { href: "/admin/pengaturan", label: "Pengaturan", Icon: Gear, adminOnly: true },
 ];
+/** Halaman khusus admin (super admin / admin klien); supervisor diarahkan ke dashboard. */
+const ADMIN_ONLY = NAV.filter((n) => "adminOnly" in n && n.adminOnly).map((n) => n.href);
 
 export function AdminShell({ children }: { children: React.ReactNode }) {
   const path = usePathname();
@@ -38,6 +40,8 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
     if (path === "/admin/login") return;
     if ((error instanceof ApiError && error.status === 401) || me?.role === "petugas") {
       router.replace("/admin/login");
+    } else if (me?.role === "supervisor" && ADMIN_ONLY.some((h) => path.startsWith(h))) {
+      router.replace("/admin");
     }
   }, [error, me, path, router]);
 
@@ -89,7 +93,7 @@ function Frame({ user, children }: { user: User; children: React.ReactNode }) {
         </span>
       </Link>
       <nav aria-label="Admin" className="flex flex-col gap-0.5 text-[15px]">
-        {NAV.map(({ href, label, Icon, badge }) => {
+        {NAV.filter((n) => !(user.role === "supervisor" && "adminOnly" in n && n.adminOnly)).map(({ href, label, Icon, badge }) => {
           const on = href === "/admin" ? path === "/admin" : path.startsWith(href);
           return (
             <Link key={href} href={withScope(href, scope)} aria-current={on ? "page" : undefined}
@@ -113,6 +117,9 @@ function Frame({ user, children }: { user: User; children: React.ReactNode }) {
           <div className="flex min-w-0 flex-col">
             <span className="truncate text-on-ink">{user.name}</span>
             <span className="text-[#8F948E]">{ROLE_LABEL[user.role]}</span>
+            {user.role === "supervisor" && (
+              <Link href="/admin/akun" className="text-[#B4B8B3] underline hover:text-white">Ganti password</Link>
+            )}
           </div>
         </div>
         <button onClick={logout} className="min-h-11 rounded-lg border border-ink-line px-3 text-left text-sm hover:bg-[#1E2220] hover:text-white">
