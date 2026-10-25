@@ -2,6 +2,7 @@
 import csv
 import io
 import re
+from concurrent.futures import ThreadPoolExecutor
 from datetime import date, timedelta
 from typing import Annotated
 
@@ -63,7 +64,7 @@ def _txs(db, user, scope_, start, end, user_id: int | None = None):
             .options(selectinload(Transaction.post), selectinload(Transaction.site),
                      selectinload(Transaction.checkin_user), selectinload(Transaction.checkout_user),
                      selectinload(Transaction.incidents), selectinload(Transaction.checks),
-                     selectinload(Transaction.inside_items))
+                     selectinload(Transaction.inside_items), selectinload(Transaction.photos))
             .where(Transaction.checkin_at >= start, Transaction.checkin_at < end)
             .order_by(Transaction.checkin_at))
     if ids is not None:
@@ -375,17 +376,28 @@ def summary_pdf(user: AdminUser, db: DB, p: PeriodQ):
 SIDE_NAME = {"depan": "Depan", "belakang": "Belakang", "kiri": "Kiri", "kanan": "Kanan"}
 
 
+def _photo_bytes(key: str) -> bytes | None:
+    try:
+        return storage.internal_client().get_object(Bucket=get_settings().s3_bucket, Key=key)["Body"].read()
+    except Exception:  # noqa: BLE001 — foto hilang tidak boleh menggagalkan PDF
+        return None
+
+
 def _photo_image(key: str, max_w: float, max_h: float) -> Image | None:
     """Ambil foto dari storage, perkecil untuk PDF. None kalau tidak bisa dimuat."""
+    raw = _photo_bytes(key)
+    return _fit_image(raw, max_w, max_h) if raw else None
+
+
+def _fit_image(raw: bytes, max_w: float, max_h: float, px: int = 1000) -> Image | None:
     from PIL import Image as PILImage
 
     try:
-        raw = storage.internal_client().get_object(Bucket=get_settings().s3_bucket, Key=key)["Body"].read()
         im = PILImage.open(io.BytesIO(raw))
         im = im.convert("RGB")
-        im.thumbnail((1000, 1000))
+        im.thumbnail((px, px))
         out = io.BytesIO()
-        im.save(out, "JPEG", quality=80)
+        im.save(out, "JPEG", quality=78)
         out.seek(0)
         scale = min(max_w / im.width, max_h / im.height)
         img = Image(out, width=im.width * scale, height=im.height * scale)
@@ -493,3 +505,86 @@ def transaction_pdf(tx_id: int, user: AdminUser, db: DB):
     doc.build(story, onFirstPage=_brand("Laporan kendaraan"), onLaterPages=_brand("Laporan kendaraan"))
     return Response(buf.getvalue(), media_type="application/pdf",
                     headers={"Content-Disposition": f'attachment; filename="ceklis-{tx.plate.replace(" ", "")}-{tx.id}.pdf"'})
+
+
+DAY_NAME = ["Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu", "Minggu"]
+MONTH_NAME = ["", "Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"]
+
+
+@router.get("/daily.pdf")
+def daily_pdf(user: AdminUser, db: DB, p: PeriodQ):
+    """Laporan harian: transaksi dikelompokkan per tanggal, tiap transaksi ringkas dengan foto kecil."""
+    txs = _txs(db, user, p.scope, p.start, p.end, p.user_id)
+    styles = getSampleStyleSheet()
+    cell = styles["BodyText"].clone("dcell", fontSize=8, leading=10)
+    small = styles["BodyText"].clone("dsmall", fontSize=7, leading=8.5, textColor=colors.HexColor("#5B605A"))
+    plate_st = styles["Normal"].clone("dplate", fontName="Helvetica", fontSize=11, leading=14)
+    buf = io.BytesIO()
+    doc = SimpleDocTemplate(buf, pagesize=A4, leftMargin=12 * mm, rightMargin=12 * mm, topMargin=TOP_BAR + 10 * mm,
+                            bottomMargin=16 * mm, title="Laporan Harian Ceklis")
+    full = A4[0] - 24 * mm
+    info_w = 92 * mm
+    thumb = 19 * mm  # foto kecil supaya banyak transaksi muat per halaman
+
+    def esc(x) -> str:
+        return str(x).replace("&", "&amp;").replace("<", "&lt;")
+
+    # Ambil semua foto paralel (pakai thumbnail kalau sudah dibuat worker)
+    photos = {t.id: [ph for ph in sorted(t.photos, key=lambda x: (x.phase != "in", x.taken_at))
+                     if ph.uploaded_at and not ph.deleted_at] for t in txs}
+    keys = [ph.thumb_key or ph.object_key for lst in photos.values() for ph in lst]
+    with ThreadPoolExecutor(max_workers=8) as pool:
+        images = dict(zip(keys, pool.map(lambda k: _photo_bytes(k), keys)))
+
+    who = f"Petugas: {u.name}" if (u := _filter_user(db, user, p)) else "Semua petugas"
+    story = _title("Laporan harian", f"Periode {p.d_from:%d %b %Y} – {p.d_to:%d %b %Y} · {who} · {len(txs)} transaksi")
+    if not txs:
+        story.append(Paragraph("Tidak ada transaksi dalam periode ini.", styles["Normal"]))
+
+    by_day: dict[date, list] = {}
+    for t in txs:
+        by_day.setdefault(t.checkin_at.astimezone(tz()).date(), []).append(t)
+
+    for day, items in by_day.items():
+        done = sum(t.status == "released" for t in items)
+        head = f"{DAY_NAME[day.weekday()]}, {day.day} {MONTH_NAME[day.month]} {day.year} — {len(items)} transaksi · {done} selesai"
+        blocks = []
+        for n, t in enumerate(items, start=1):
+            out = f"{_fmt(t.checkout_at)[11:]} · {esc(t.checkout_user.name)}" if t.checkout_user else "belum keluar"
+            info = [
+                Paragraph(f"<font size='8' color='#5B605A'>{n}.</font> <font face='Courier-Bold' size='11.5'>{esc(t.plate)}</font>",
+                          plate_st),
+                Paragraph(f"{esc(t.site.name)} · {esc(t.post.name)} · <b>{STATUS_LABEL[t.status]}</b>", small),
+                Paragraph(f"<b>Masuk</b> {_fmt(t.checkin_at)[11:]} · {esc(t.checkin_user.name)} &nbsp; "
+                          f"<b>Keluar</b> {out} &nbsp; <b>Durasi</b> {_dur(_minutes(t))}", cell),
+                Paragraph(f"<b>Kondisi</b> {esc(_conditions(t))}", cell),
+                Paragraph(f"<b>Barang</b> {esc(_inside(t))}", cell),
+            ]
+            pics = []
+            for ph in photos[t.id][:8]:
+                raw = images.get(ph.thumb_key or ph.object_key)
+                img = _fit_image(raw, thumb, thumb, px=260) if raw else None
+                pics.append(img or Paragraph("–", small))
+            if pics:
+                per_row = int((full - info_w) // (thumb + 2 * mm))
+                grid_rows = [pics[i:i + per_row] for i in range(0, len(pics), per_row)]
+                grid_rows[-1] += [""] * (per_row - len(grid_rows[-1]))
+                g = Table(grid_rows, colWidths=[thumb + 2 * mm] * per_row, hAlign="LEFT")
+                g.setStyle(TableStyle([("LEFTPADDING", (0, 0), (-1, -1), 0), ("RIGHTPADDING", (0, 0), (-1, -1), 2),
+                                       ("TOPPADDING", (0, 0), (-1, -1), 0), ("BOTTOMPADDING", (0, 0), (-1, -1), 2),
+                                       ("VALIGN", (0, 0), (-1, -1), "TOP")]))
+                right = g
+            else:
+                right = Paragraph("Tanpa foto", small)
+            row = Table([[info, right]], colWidths=[info_w, full - info_w])
+            row.setStyle(TableStyle([
+                ("VALIGN", (0, 0), (-1, -1), "TOP"), ("LINEBELOW", (0, 0), (-1, -1), 0.4, LINE),
+                ("LINEBEFORE", (0, 0), (0, 0), 2.5, ACCENT if t.status != "released" else INK),
+                ("TOPPADDING", (0, 0), (-1, -1), 5), ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+            ]))
+            blocks.append(row)
+        story += [Spacer(1, 5 * mm), KeepTogether([_section(head, full), Spacer(1, 2 * mm), blocks[0]]), *blocks[1:]]
+
+    doc.build(story, onFirstPage=_brand("Laporan harian"), onLaterPages=_brand("Laporan harian"))
+    return Response(buf.getvalue(), media_type="application/pdf", headers={
+        "Content-Disposition": f'attachment; filename="ceklis-harian{_user_suffix(db, user, p)}-{p.d_from}-{p.d_to}.pdf"'})

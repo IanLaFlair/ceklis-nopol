@@ -38,6 +38,7 @@ export default function LaporanPage() {
       ? [{ href: `${BASE}/admin/reports/incidents.csv?${qs}`, label: "Insiden (CSV)", sub: "Insiden, bagian, catatan petugas, keputusan supervisor." }]
       : []),
     { href: `${BASE}/admin/reports/summary.pdf?${qs}`, label: "Laporan (PDF)", sub: "Ringkasan, rekap per pos & per petugas, dan rincian setiap transaksi dalam periode." },
+    { href: `${BASE}/admin/reports/daily.pdf?${qs}`, label: "Laporan Harian (PDF)", sub: "Transaksi dikelompokkan per hari, lengkap dengan foto kecil tiap kendaraan." },
   ];
 
   return (

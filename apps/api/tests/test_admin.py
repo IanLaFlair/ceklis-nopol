@@ -212,3 +212,11 @@ def test_laporan_per_petugas(world):
     rina = load_workbook(io.BytesIO(ops.get(f"/api/admin/reports/transactions.xlsx?user={world.rina.id}").content))
     assert rina["Transaksi"].max_row == 1  # hanya judul
     assert ops.get(f"/api/admin/reports/summary.pdf?user={world.budi.id}").content.startswith(b"%PDF")
+
+
+def test_laporan_harian_pdf(world):
+    login_petugas(world.budi).post("/api/transactions", json=checkin_payload(world))
+    ops = login_admin("ops@x.id", "rahasia-ops")
+    r = ops.get("/api/admin/reports/daily.pdf")
+    assert r.status_code == 200 and r.content.startswith(b"%PDF")
+    assert ops.get(f"/api/admin/reports/daily.pdf?user={world.budi.id}").status_code == 200
