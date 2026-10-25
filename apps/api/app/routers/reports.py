@@ -14,7 +14,7 @@ from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4, landscape
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.units import mm
-from reportlab.platypus import Image, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+from reportlab.platypus import Image, KeepTogether, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 from sqlalchemy import or_, select
 from sqlalchemy.orm import selectinload
 
@@ -227,6 +227,74 @@ def incidents_csv(user: AdminUser, db: DB, p: PeriodQ):
     ], rows)
 
 
+INK, LINE, ACCENT = colors.HexColor("#0E100F"), colors.HexColor("#DCDDD6"), colors.HexColor("#F5C518")
+TOP_BAR, STRIPE = 15 * mm, 2.4 * mm
+
+
+def _brand(subtitle: str):
+    """Kop hitam + logo kuning + garis hazard, footer bergaris kuning dengan nomor halaman (gaya Nopol)."""
+    def draw(c, doc):
+        w, h = doc.pagesize
+        left, right = doc.leftMargin, w - doc.rightMargin
+        c.saveState()
+        c.setFillColor(INK)
+        c.rect(0, h - TOP_BAR, w, TOP_BAR, fill=1, stroke=0)
+        x, y = left, h - TOP_BAR + 3.5 * mm
+        c.setFillColor(ACCENT)
+        c.roundRect(x, y, 8 * mm, 8 * mm, 1.6 * mm, fill=1, stroke=0)
+        c.setStrokeColor(INK)
+        c.setLineWidth(1.8)
+        c.setLineCap(1)
+        c.lines([(x + 2.1 * mm, y + 4.1 * mm, x + 3.5 * mm, y + 2.6 * mm), (x + 3.5 * mm, y + 2.6 * mm, x + 6 * mm, y + 5.6 * mm)])
+        c.setFillColor(colors.white)
+        c.setFont("Helvetica-Bold", 14)
+        c.drawString(x + 10.5 * mm, y + 2.4 * mm, "ceklis")
+        c.setFillColor(colors.HexColor("#B4B8B3"))
+        c.setFont("Helvetica", 8)
+        c.drawRightString(right, y + 2.8 * mm, subtitle)
+        # garis hazard kuning-hitam di bawah kop
+        sy = h - TOP_BAR - STRIPE
+        c.setFillColor(ACCENT)
+        c.rect(0, sy, w, STRIPE, fill=1, stroke=0)
+        c.setFillColor(INK)
+        step = 7 * mm
+        k = -STRIPE
+        while k < w:
+            p = c.beginPath()
+            p.moveTo(k, sy)
+            p.lineTo(k + 3 * mm, sy)
+            p.lineTo(k + 3 * mm + STRIPE, sy + STRIPE)
+            p.lineTo(k + STRIPE, sy + STRIPE)
+            p.close()
+            c.drawPath(p, fill=1, stroke=0)
+            k += step
+        # footer
+        c.setStrokeColor(ACCENT)
+        c.setLineWidth(1.2)
+        c.line(left, 11 * mm, right, 11 * mm)
+        c.setFillColor(colors.HexColor("#5B605A"))
+        c.setFont("Helvetica", 7.5)
+        c.drawString(left, 7 * mm, "ceklis · by nopol")
+        c.drawRightString(right, 7 * mm, f"Halaman {doc.page}")
+        c.restoreState()
+    return draw
+
+
+def _section(text: str, width: float) -> Table:
+    """Judul bagian dengan aksen garis kuning di kiri."""
+    style = getSampleStyleSheet()["Heading3"].clone("sec", spaceBefore=0, spaceAfter=0, textColor=INK)
+    t = Table([[Paragraph(text, style)]], colWidths=[width])
+    t.setStyle(TableStyle([("LINEBEFORE", (0, 0), (0, 0), 3.5, ACCENT), ("LEFTPADDING", (0, 0), (-1, -1), 7),
+                           ("TOPPADDING", (0, 0), (-1, -1), 1), ("BOTTOMPADDING", (0, 0), (-1, -1), 3)]))
+    return t
+
+
+def _title(text: str, sub: str) -> list:
+    st = getSampleStyleSheet()
+    return [Paragraph(text, st["Title"].clone("t", alignment=0, fontSize=18, leading=22, spaceAfter=2, textColor=INK)),
+            Paragraph(sub, st["Normal"].clone("s", textColor=colors.HexColor("#5B605A"))), Spacer(1, 5 * mm)]
+
+
 def _dur(m: int | None) -> str:
     if m is None:
         return "-"
@@ -244,12 +312,13 @@ def summary_pdf(user: AdminUser, db: DB, p: PeriodQ):
     cell = styles["BodyText"].clone("cell", fontSize=7.5, leading=9)
     buf = io.BytesIO()
     page = landscape(A4)
-    doc = SimpleDocTemplate(buf, pagesize=page, leftMargin=12 * mm, rightMargin=12 * mm, topMargin=12 * mm,
-                            bottomMargin=12 * mm, title="Laporan Ceklis")
-    ink, line, accent = colors.HexColor("#0E100F"), colors.HexColor("#DCDDD6"), colors.HexColor("#F5C518")
+    doc = SimpleDocTemplate(buf, pagesize=page, leftMargin=12 * mm, rightMargin=12 * mm, topMargin=TOP_BAR + 10 * mm,
+                            bottomMargin=16 * mm, title="Laporan Ceklis")
+    ink, line, accent = INK, LINE, ACCENT
+    full = page[0] - 24 * mm
 
     def table(data, widths):
-        t = Table(data, colWidths=widths, repeatRows=1)
+        t = Table(data, colWidths=widths, repeatRows=1, hAlign="LEFT")
         t.setStyle(TableStyle([
             ("BACKGROUND", (0, 0), (-1, 0), ink), ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
             ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"), ("FONTSIZE", (0, 0), (-1, -1), 8),
@@ -262,34 +331,29 @@ def summary_pdf(user: AdminUser, db: DB, p: PeriodQ):
         esc = (str(x).replace("&", "&amp;").replace("<", "&lt;") for x in lines)
         return Paragraph("<br/>".join(esc), cell)
 
-    story = [
-        Paragraph("<b>ceklis</b> — Laporan transaksi", styles["Title"]),
-        Paragraph(f"Periode {d_from:%d %b %Y} – {d_to:%d %b %Y}"
-                  + (f" · Petugas: {u.name}" if (u := _filter_user(db, user, p)) else " · Semua petugas"),
-                  styles["Normal"]),
-        Spacer(1, 5 * mm),
-    ]
+    who = f"Petugas: {u.name}" if (u := _filter_user(db, user, p)) else "Semua petugas"
+    story = _title("Laporan transaksi", f"Periode {d_from:%d %b %Y} – {d_to:%d %b %Y} · {who}")
     kpi = Table([
         ["Check in", "Selesai", "Masih parkir", "Rata-rata durasi"],
         [len(txs), sum(t.status == "released" for t in txs), sum(t.status != "released" for t in txs),
          _dur(sum(durations) // len(durations) if durations else None)],
-    ], colWidths=[45 * mm] * 4)
+    ], colWidths=[45 * mm] * 4, hAlign="LEFT")
     kpi.setStyle(TableStyle([
         ("BACKGROUND", (0, 0), (-1, 0), accent), ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
         ("FONTSIZE", (0, 1), (-1, 1), 14), ("GRID", (0, 0), (-1, -1), 0.4, line),
         ("ALIGN", (0, 0), (-1, -1), "CENTER"),
         ("TOPPADDING", (0, 1), (-1, 1), 6), ("BOTTOMPADDING", (0, 1), (-1, 1), 6),
     ]))
-    story += [kpi, Spacer(1, 5 * mm), Paragraph("<b>Per lokasi / pos</b>", styles["Heading3"])]
+    story += [kpi, Spacer(1, 6 * mm), _section("Per lokasi / pos", full), Spacer(1, 2 * mm)]
     loc_rows = [["Lokasi", "Pos", "Check in", "Selesai", "Masih parkir", "Rata-rata durasi"]]
     loc_rows += [[site, post, n, done, n - done, _dur(avg)] for site, post, n, done, avg in _per_post(txs)]
     story.append(table(loc_rows, [70 * mm, 45 * mm, 25 * mm, 25 * mm, 28 * mm, 35 * mm]))
 
-    story += [Spacer(1, 5 * mm), Paragraph("<b>Per petugas</b>", styles["Heading3"])]
+    story += [Spacer(1, 6 * mm), _section("Per petugas", full), Spacer(1, 2 * mm)]
     story.append(table([["Petugas", "Check in", "Check out"]] + [list(r) for r in _per_user(txs)] if txs else
                        [["Petugas", "Check in", "Check out"], ["-", 0, 0]], [70 * mm, 30 * mm, 30 * mm]))
 
-    story += [Spacer(1, 6 * mm), Paragraph(f"<b>Rincian transaksi</b> ({len(txs)})", styles["Heading3"])]
+    story += [Spacer(1, 6 * mm), _section(f"Rincian transaksi ({len(txs)})", full), Spacer(1, 2 * mm)]
     rows = [["No", "Nomor polisi", "Lokasi · Pos", "Masuk", "Keluar", "Durasi", "Status",
              "Kondisi (selain mulus)", "Barang di dalam"]]
     for n, t in enumerate(txs, start=1):
@@ -303,7 +367,7 @@ def summary_pdf(user: AdminUser, db: DB, p: PeriodQ):
         rows.append(["", "Tidak ada transaksi dalam periode ini.", "", "", "", "", "", "", ""])
     story.append(table(rows, [10 * mm, 25 * mm, 40 * mm, 30 * mm, 30 * mm, 16 * mm, 20 * mm, 58 * mm, 44 * mm]))
 
-    doc.build(story)
+    doc.build(story, onFirstPage=_brand("Laporan transaksi"), onLaterPages=_brand("Laporan transaksi"))
     return Response(buf.getvalue(), media_type="application/pdf",
                     headers={"Content-Disposition": f'attachment; filename="ceklis-laporan{_user_suffix(db, user, p)}-{d_from}-{d_to}.pdf"'})
 
@@ -311,7 +375,7 @@ def summary_pdf(user: AdminUser, db: DB, p: PeriodQ):
 SIDE_NAME = {"depan": "Depan", "belakang": "Belakang", "kiri": "Kiri", "kanan": "Kanan"}
 
 
-def _photo_image(key: str, width: float) -> Image | None:
+def _photo_image(key: str, max_w: float, max_h: float) -> Image | None:
     """Ambil foto dari storage, perkecil untuk PDF. None kalau tidak bisa dimuat."""
     from PIL import Image as PILImage
 
@@ -323,7 +387,10 @@ def _photo_image(key: str, width: float) -> Image | None:
         out = io.BytesIO()
         im.save(out, "JPEG", quality=80)
         out.seek(0)
-        return Image(out, width=width, height=width * im.height / im.width)
+        scale = min(max_w / im.width, max_h / im.height)
+        img = Image(out, width=im.width * scale, height=im.height * scale)
+        img.hAlign = "LEFT"
+        return img
     except Exception:  # noqa: BLE001 — foto rusak/hilang tidak boleh menggagalkan PDF
         return None
 
@@ -338,10 +405,10 @@ def transaction_pdf(tx_id: int, user: AdminUser, db: DB):
     styles = getSampleStyleSheet()
     cell = styles["BodyText"].clone("cell", fontSize=8.5, leading=11)
     small = styles["BodyText"].clone("small", fontSize=7.5, leading=9, textColor=colors.HexColor("#5B605A"))
-    ink, line, accent = colors.HexColor("#0E100F"), colors.HexColor("#DCDDD6"), colors.HexColor("#F5C518")
+    ink, line = INK, LINE
     buf = io.BytesIO()
-    doc = SimpleDocTemplate(buf, pagesize=A4, leftMargin=14 * mm, rightMargin=14 * mm, topMargin=14 * mm,
-                            bottomMargin=14 * mm, title=f"Ceklis {tx.plate}")
+    doc = SimpleDocTemplate(buf, pagesize=A4, leftMargin=14 * mm, rightMargin=14 * mm, topMargin=TOP_BAR + 10 * mm,
+                            bottomMargin=16 * mm, title=f"Ceklis {tx.plate}")
     full = A4[0] - 28 * mm
 
     def esc(x) -> str:
@@ -358,11 +425,16 @@ def transaction_pdf(tx_id: int, user: AdminUser, db: DB):
         return t
 
     labels = {c["id"]: c["label"] for c in (tx.template_snapshot or {}).get("conditions", [])}
-    story = [
-        Paragraph(f"<b>ceklis</b> — Laporan kendaraan <b>{esc(tx.plate)}</b>", styles["Title"]),
-        Paragraph(f"{esc(tx.site.name)} · {esc(tx.post.name)} · {STATUS_LABEL[tx.status]}", styles["Normal"]),
-        Spacer(1, 5 * mm),
-    ]
+    from reportlab.pdfbase.pdfmetrics import stringWidth
+
+    plate = Table([[Paragraph(esc(tx.plate), styles["Normal"].clone("plate", fontName="Courier-Bold", fontSize=20, leading=22))]],
+                  colWidths=[stringWidth(tx.plate, "Courier-Bold", 20) + 22])
+    plate.setStyle(TableStyle([("BOX", (0, 0), (-1, -1), 2, INK), ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#F4F4EE")),
+                               ("TOPPADDING", (0, 0), (-1, -1), 5), ("BOTTOMPADDING", (0, 0), (-1, -1), 7),
+                               ("LEFTPADDING", (0, 0), (-1, -1), 10), ("RIGHTPADDING", (0, 0), (-1, -1), 10)]))
+    plate.hAlign = "LEFT"
+    story = _title("Laporan kendaraan", f"{esc(tx.site.name)} · {esc(tx.post.name)} · {STATUS_LABEL[tx.status]}")
+    story[-1:-1] = [Spacer(1, 3 * mm), plate]
     info = [
         ["Masuk", f"{_fmt(tx.checkin_at)} · oleh {tx.checkin_user.name}"],
         ["Keluar", f"{_fmt(tx.checkout_at)} · oleh {tx.checkout_user.name}" if tx.checkout_user else "Belum keluar"],
@@ -377,7 +449,7 @@ def transaction_pdf(tx_id: int, user: AdminUser, db: DB):
                    colWidths=[40 * mm, full - 40 * mm])
     info_t.setStyle(TableStyle([("GRID", (0, 0), (-1, -1), 0.4, line), ("VALIGN", (0, 0), (-1, -1), "TOP"),
                                 ("BACKGROUND", (0, 0), (0, -1), colors.HexColor("#F7F7F3"))]))
-    story += [info_t, Spacer(1, 5 * mm), Paragraph("<b>Kondisi bagian luar</b>", styles["Heading3"])]
+    story += [info_t, Spacer(1, 6 * mm), _section("Kondisi bagian luar", full), Spacer(1, 2 * mm)]
 
     def cond(c) -> str:
         if c is None:
@@ -400,20 +472,24 @@ def transaction_pdf(tx_id: int, user: AdminUser, db: DB):
     photos = [ph for ph in tx.photos if ph.uploaded_at and not ph.deleted_at]
     if photos:
         names = {c.item_id: c.label_snapshot for c in tx.checks} | {i.item_id: i.label for i in tx.inside_items}
-        story += [Spacer(1, 5 * mm), Paragraph(f"<b>Foto</b> ({len(photos)})", styles["Heading3"])]
-        col_w = (full - 8 * mm) / 3
+        col_w = full / 3
+        box_w, box_h = col_w - 6 * mm, 56 * mm  # foto potret dibatasi tingginya supaya tidak melompat ke halaman baru
         cells = []
         for ph in sorted(photos, key=lambda x: (x.phase != "in", x.taken_at)):
-            img = _photo_image(ph.object_key, col_w - 4 * mm)
+            img = _photo_image(ph.object_key, box_w, box_h)
             what = names.get(ph.item_id or "", SIDE_NAME.get(ph.side, ph.side))
-            caption = Paragraph(f"{'Masuk' if ph.phase == 'in' else 'Keluar'} · {esc(what)}<br/>{_fmt(ph.taken_at)}", small)
-            cells.append([img or Paragraph("Foto tidak bisa dimuat", small), caption])
-        rows = [cells[i:i + 3] for i in range(0, len(cells), 3)]
-        rows[-1] += [""] * (3 - len(rows[-1]))
-        pt = Table(rows, colWidths=[col_w] * 3)
-        pt.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP"), ("BOTTOMPADDING", (0, 0), (-1, -1), 8)]))
-        story.append(pt)
+            caption = Paragraph(f"<b>{'Masuk' if ph.phase == 'in' else 'Keluar'} · {esc(what)}</b><br/>{_fmt(ph.taken_at)}", small)
+            cells.append([img or Paragraph("Foto tidak bisa dimuat", small), Spacer(1, 1.5 * mm), caption])
+        rows = []
+        for i in range(0, len(cells), 3):
+            row = cells[i:i + 3] + [""] * (3 - len(cells[i:i + 3]))
+            rt = Table([row], colWidths=[col_w] * 3)
+            rt.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP"), ("LEFTPADDING", (0, 0), (-1, -1), 0),
+                                    ("BOTTOMPADDING", (0, 0), (-1, -1), 6)]))
+            rows.append(rt)
+        story += [Spacer(1, 6 * mm),
+                  KeepTogether([_section(f"Foto ({len(photos)})", full), Spacer(1, 3 * mm), rows[0]]), *rows[1:]]
 
-    doc.build(story)
+    doc.build(story, onFirstPage=_brand("Laporan kendaraan"), onLaterPages=_brand("Laporan kendaraan"))
     return Response(buf.getvalue(), media_type="application/pdf",
                     headers={"Content-Disposition": f'attachment; filename="ceklis-{tx.plate.replace(" ", "")}-{tx.id}.pdf"'})
