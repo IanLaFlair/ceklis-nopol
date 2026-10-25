@@ -17,6 +17,8 @@ import { newTicketCode } from "@/lib/ticket";
 import type { ConditionOption } from "@/lib/types";
 
 const TITLES = ["Nomor polisi", "Checklist"];
+// Scan plat (LPR) disembunyikan sementara sambil infrastruktur engine disiapkan; nyalakan dengan NEXT_PUBLIC_PLATE_SCAN=1 saat build
+const PLATE_SCAN = process.env.NEXT_PUBLIC_PLATE_SCAN === "1";
 // Dipakai kalau template lama belum punya daftar kondisi
 const FALLBACK_CONDITIONS: ConditionOption[] = [
   { id: "mulus", label: "Mulus", ok: true },
@@ -223,33 +225,37 @@ export default function CheckinPage() {
       <main className="flex flex-1 flex-col gap-[18px] overflow-y-auto px-5 pb-6 pt-[18px] [&>*]:shrink-0">
         {step === 1 && (
           <>
-            <div className="relative flex h-[170px] items-center justify-center overflow-hidden rounded-2xl bg-[#161917] bg-[linear-gradient(#1D201E_1px,transparent_1px),linear-gradient(90deg,#1D201E_1px,transparent_1px)] bg-[size:24px_24px]">
-              {["left-3 top-3 border-l-[3px] border-t-[3px]", "right-3 top-3 border-r-[3px] border-t-[3px]",
-                "bottom-3 left-3 border-b-[3px] border-l-[3px]", "bottom-3 right-3 border-b-[3px] border-r-[3px]"].map((c) => (
-                <span key={c} aria-hidden="true" className={`absolute size-[22px] border-accent ${c}`} />
-              ))}
-              {scan.scanned && normalizePlate(scan.scanned) === normalizePlate(plate) ? (
-                <div className="flex flex-col items-center gap-2.5">
-                  <span className="rounded border-2 border-[#111] bg-plate px-4 py-1.5 font-mono text-[26px] font-bold outline-2 outline-offset-[5px] outline-accent">{scan.scanned}</span>
-                  <span className="text-xs text-[#C9CCC6]">Terbaca otomatis — cocokkan dengan plat asli</span>
-                  <button onClick={plateCam.open} className="text-xs text-on-ink-muted underline">Scan ulang</button>
-                </div>
-              ) : (
-                <>
-                  {!scan.busy && <div className="scanline" aria-hidden="true" />}
-                  <button onClick={plateCam.open} disabled={scan.busy}
-                    className="tap relative z-[1] flex min-h-[52px] items-center gap-2.5 rounded-xl bg-accent px-5 text-base font-bold text-ink">
-                    {scan.busy ? <Spinner /> : <ScanPlate />}
-                    {scan.busy ? "Membaca plat…" : "Scan plat"}
-                  </button>
-                </>
-              )}
-              {plateCam.input}
-            </div>
-            {scan.note && <p className="-mt-2 rounded-xl bg-warning-bg px-3.5 py-2.5 text-[13px] text-warning">{scan.note}</p>}
+            {PLATE_SCAN && (
+              <>
+              <div className="relative flex h-[170px] items-center justify-center overflow-hidden rounded-2xl bg-[#161917] bg-[linear-gradient(#1D201E_1px,transparent_1px),linear-gradient(90deg,#1D201E_1px,transparent_1px)] bg-[size:24px_24px]">
+                {["left-3 top-3 border-l-[3px] border-t-[3px]", "right-3 top-3 border-r-[3px] border-t-[3px]",
+                  "bottom-3 left-3 border-b-[3px] border-l-[3px]", "bottom-3 right-3 border-b-[3px] border-r-[3px]"].map((c) => (
+                  <span key={c} aria-hidden="true" className={`absolute size-[22px] border-accent ${c}`} />
+                ))}
+                {scan.scanned && normalizePlate(scan.scanned) === normalizePlate(plate) ? (
+                  <div className="flex flex-col items-center gap-2.5">
+                    <span className="rounded border-2 border-[#111] bg-plate px-4 py-1.5 font-mono text-[26px] font-bold outline-2 outline-offset-[5px] outline-accent">{scan.scanned}</span>
+                    <span className="text-xs text-[#C9CCC6]">Terbaca otomatis — cocokkan dengan plat asli</span>
+                    <button onClick={plateCam.open} className="text-xs text-on-ink-muted underline">Scan ulang</button>
+                  </div>
+                ) : (
+                  <>
+                    {!scan.busy && <div className="scanline" aria-hidden="true" />}
+                    <button onClick={plateCam.open} disabled={scan.busy}
+                      className="tap relative z-[1] flex min-h-[52px] items-center gap-2.5 rounded-xl bg-accent px-5 text-base font-bold text-ink">
+                      {scan.busy ? <Spinner /> : <ScanPlate />}
+                      {scan.busy ? "Membaca plat…" : "Scan plat"}
+                    </button>
+                  </>
+                )}
+                {plateCam.input}
+              </div>
+              {scan.note && <p className="-mt-2 rounded-xl bg-warning-bg px-3.5 py-2.5 text-[13px] text-warning">{scan.note}</p>}
+              </>
+            )}
             <label className={label}>
               Nomor polisi
-              <input value={plate} onChange={(e) => setPlate(e.target.value.toUpperCase())} placeholder="B 1234 ABC"
+              <input value={plate} onChange={(e) => setPlate(e.target.value.toUpperCase())} placeholder="B 1234 ABC" autoFocus={!PLATE_SCAN}
                 autoCapitalize="characters" autoComplete="off" enterKeyHint="next"
                 onKeyDown={(e) => e.key === "Enter" && next()}
                 className={`${field} min-h-14 font-mono text-xl font-bold uppercase`} />
