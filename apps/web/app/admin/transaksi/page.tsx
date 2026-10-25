@@ -53,33 +53,35 @@ export default function TransaksiPage() {
         </label>
       </PageHead>
 
-      <div role="tablist" aria-label="Filter" className="flex flex-wrap gap-2">
-        {TABS.map((x) => (
-          <button key={x.id} role="tab" aria-selected={t === x.id} onClick={() => { setTab(x.id === "all" ? null : x.id); }}
-            className={`tap min-h-11 rounded-full border-[1.5px] px-4 text-sm ${t === x.id ? "border-ink bg-ink font-semibold text-on-ink" : "border-field bg-surface"}`}>
-            {x.label} <span className="opacity-70">{data?.counts[x.id] ?? ""}</span>
-          </button>
-        ))}
-      </div>
-      {error && <ErrorNote>{error.message}</ErrorNote>}
-
       <div className="flex flex-wrap items-start gap-4">
-        <section aria-label="Daftar transaksi" className={`${card} min-w-0 flex-[1_1_380px] overflow-hidden`}>
-          {data?.items.map((r, i) => (
-            <button key={r.id} onClick={() => setId(String(r.id))} aria-current={r.id === id ? "true" : undefined}
-              className={`flex min-h-16 w-full items-center gap-3 px-4 py-3 text-left hover:bg-paper-2 ${i ? "border-t border-line-2" : ""} ${r.id === id ? "bg-warning-bg shadow-[inset_3px_0_0_var(--color-accent)]" : ""}`}>
-              <Plate size="sm">{r.plate}</Plate>
-              <span className="flex min-w-0 flex-1 flex-col">
-                <span className="truncate text-sm font-medium">{[r.make_model, r.color].filter(Boolean).join(" · ") || `oleh ${r.checkin_by?.name ?? "-"}${r.checkout_by ? ` · keluar oleh ${r.checkout_by.name}` : ""}`}</span>
-                <span className="truncate text-xs text-muted">
-                  {r.site.name} · {r.post.name} · {r.checkout_at ? `${clock(r.checkin_at)}–${clock(r.checkout_at)}` : dateTime(r.checkin_at)}
+        {/* Filter ikut kolom kiri supaya kartu detail di kanan sejajar dengan bagian atas filter */}
+        <div className="flex min-w-0 flex-[1_1_380px] flex-col gap-4">
+          <div role="tablist" aria-label="Filter" className="flex flex-wrap gap-2">
+            {TABS.map((x) => (
+              <button key={x.id} role="tab" aria-selected={t === x.id} onClick={() => { setTab(x.id === "all" ? null : x.id); }}
+                className={`tap min-h-11 rounded-full border-[1.5px] px-4 text-sm ${t === x.id ? "border-ink bg-ink font-semibold text-on-ink" : "border-field bg-surface"}`}>
+                {x.label} <span className="opacity-70">{data?.counts[x.id] ?? ""}</span>
+              </button>
+            ))}
+          </div>
+          {error && <ErrorNote>{error.message}</ErrorNote>}
+          <section aria-label="Daftar transaksi" className={`${card} min-w-0 overflow-hidden`}>
+            {data?.items.map((r, i) => (
+              <button key={r.id} onClick={() => setId(String(r.id))} aria-current={r.id === id ? "true" : undefined}
+                className={`flex min-h-16 w-full items-center gap-3 px-4 py-3 text-left hover:bg-paper-2 ${i ? "border-t border-line-2" : ""} ${r.id === id ? "bg-warning-bg shadow-[inset_3px_0_0_var(--color-accent)]" : ""}`}>
+                <Plate size="sm">{r.plate}</Plate>
+                <span className="flex min-w-0 flex-1 flex-col">
+                  <span className="truncate text-sm font-medium">{[r.make_model, r.color].filter(Boolean).join(" · ") || `oleh ${r.checkin_by?.name ?? "-"}${r.checkout_by ? ` · keluar oleh ${r.checkout_by.name}` : ""}`}</span>
+                  <span className="truncate text-xs text-muted">
+                    {r.site.name} · {r.post.name} · {r.checkout_at ? `${clock(r.checkin_at)}–${clock(r.checkout_at)}` : dateTime(r.checkin_at)}
+                  </span>
                 </span>
-              </span>
-              <StatusBadge status={r.status} />
-            </button>
-          ))}
-          {data && !data.items.length && <p className="p-8 text-center text-sm text-muted">Tidak ada transaksi yang cocok.</p>}
-        </section>
+                <StatusBadge status={r.status} />
+              </button>
+            ))}
+            {data && !data.items.length && <p className="p-8 text-center text-sm text-muted">Tidak ada transaksi yang cocok.</p>}
+          </section>
+        </div>
         <section aria-label="Detail transaksi" className="min-w-0 flex-[1.5_1_560px]">
           {id ? <TxDetailView id={id} /> : <p className="p-8 text-center text-muted">Pilih transaksi untuk melihat detail.</p>}
         </section>
