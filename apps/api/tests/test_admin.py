@@ -63,3 +63,15 @@ def test_riwayat_petugas(world):
     h = c.get("/api/me/history", params={"period": "today"}).json()
     assert h["summary"] == {"checkin": 1, "checkout": 1, "incident": 0}
     assert {e["kind"] for e in h["events"]} == {"in", "out"}
+
+
+def test_ubah_dan_hapus_klien(world):
+    root = login_admin("root@x.id", "rahasia-root")
+    c = root.post("/api/admin/clients", json={"name": "Margo Cty"}).json()
+    assert root.patch(f"/api/admin/clients/{c['id']}", json={"name": "Margo City"}).json()["name"] == "Margo City"
+    # Klien yang masih punya lokasi tidak bisa dihapus
+    assert root.delete(f"/api/admin/clients/{world.client.id}").status_code == 409
+    ops = login_admin("ops@x.id", "rahasia-ops")
+    assert ops.delete(f"/api/admin/clients/{c['id']}").status_code == 403
+    assert root.delete(f"/api/admin/clients/{c['id']}").status_code == 204
+    assert all(x["id"] != c["id"] for x in root.get("/api/admin/clients").json())

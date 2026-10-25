@@ -92,6 +92,26 @@ def update_client(client_id: int, body: ClientIn, user: ManagerUser, db: DB):
     return {"id": c.id, "name": c.name}
 
 
+@router.delete("/clients/{client_id}", status_code=204)
+def delete_client(client_id: int, user: ManagerUser, request: Request, db: DB):
+    """Hanya klien kosong (salah ketik / batal) yang bisa dihapus; data operasional tidak ikut terhapus."""
+    if user.role != "super_admin":
+        raise HTTPException(403, "Hanya super admin yang bisa menghapus klien")
+    c = db.get(Client, client_id)
+    if not c:
+        raise HTTPException(404, "Klien tidak ditemukan")
+    in_use = (
+        db.scalar(select(func.count()).select_from(Site).where(Site.client_id == client_id))
+        or db.scalar(select(func.count()).select_from(User).where(User.client_id == client_id))
+        or db.scalar(select(func.count()).select_from(ChecklistTemplate).where(ChecklistTemplate.client_id == client_id))
+    )
+    if in_use:
+        raise HTTPException(409, "Klien masih punya lokasi, user, atau template. Hapus atau pindahkan dulu.")
+    activity.log(db, user, "client_deleted", "client", c.id, device=device_of(request), meta={"name": c.name})
+    db.delete(c)
+    db.commit()
+
+
 # ---------- lokasi & pos ----------
 
 class SiteIn(BaseModel):

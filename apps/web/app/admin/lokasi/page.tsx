@@ -14,7 +14,7 @@ import { Badge, ErrorNote, Spinner } from "@/components/ui";
 
 type Modal =
   | { kind: "site"; site?: SiteOut }
-  | { kind: "client" }
+  | { kind: "client"; client?: { id: number; name: string } }
   | { kind: "post" }
   | { kind: "invite" }
   | { kind: "assignment"; a: AssignmentOut }
@@ -62,7 +62,13 @@ export default function LokasiPage() {
           </label>
           {groups.map((c) => (
             <div key={c.id}>
-              <div className="px-2.5 pt-3 pb-1.5 text-[11px] font-semibold tracking-[0.06em] text-muted-2 uppercase">{c.name}</div>
+              <div className="flex items-center gap-2 px-2.5 pt-3 pb-1.5">
+                <span className="flex-1 text-[11px] font-semibold tracking-[0.06em] text-muted-2 uppercase">{c.name}</span>
+                {manage && (
+                  <button onClick={() => setModal({ kind: "client", client: { id: c.id, name: c.name } })} aria-label={`Ubah klien ${c.name}`}
+                    className="rounded-md px-1.5 py-0.5 text-xs font-semibold text-muted hover:bg-paper hover:text-ink">Ubah</button>
+                )}
+              </div>
               {c.sites.map((s) => (
                 <button key={s.id} onClick={() => setSite(String(s.id))} aria-current={s.id === siteId ? "true" : undefined}
                   className={`flex min-h-11 w-full items-center gap-2 rounded-lg px-2.5 text-left text-sm hover:bg-paper ${s.id === siteId ? "bg-warning-bg font-semibold" : ""}`}>
@@ -86,7 +92,7 @@ export default function LokasiPage() {
         </section>
       </div>
 
-      {modal?.kind === "client" && <ClientDialog onClose={() => setModal(null)} />}
+      {modal?.kind === "client" && <ClientDialog client={modal.client} canDelete={me.role === "super_admin"} onClose={() => setModal(null)} />}
       {modal?.kind === "site" && (
         <SiteDialog site={modal.site} clients={clients ?? []} onClose={() => setModal(null)}
           onSaved={(s) => { setModal(null); setSite(String(s.id)); }} />
@@ -291,17 +297,40 @@ function Actions({ busy, onClose, label = "Simpan" }: { busy: boolean; onClose: 
   );
 }
 
-function ClientDialog({ onClose }: { onClose: () => void }) {
+function ClientDialog({ client, canDelete, onClose }: {
+  client?: { id: number; name: string };
+  canDelete: boolean;
+  onClose: () => void;
+}) {
   const { mutate } = useSWRConfig();
-  const [name, setName] = useState("");
+  const [name, setName] = useState(client?.name ?? "");
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const { busy, err, save } = useSave(() => mutate("/admin/clients"));
   return (
-    <Dialog title="Tambah klien" onClose={onClose}>
+    <Dialog title={client ? "Ubah klien" : "Tambah klien"} onClose={onClose}>
       <form className="flex flex-col gap-4" onSubmit={async (e) => {
         e.preventDefault();
-        if (await save(() => api("/admin/clients", { method: "POST", json: { name } }))) onClose();
+        const ok = await save(() => client
+          ? api(`/admin/clients/${client.id}`, { method: "PATCH", json: { name } })
+          : api("/admin/clients", { method: "POST", json: { name } }));
+        if (ok) onClose();
       }}>
         <Field label="Nama klien"><input required minLength={2} value={name} onChange={(e) => setName(e.target.value)} placeholder="mis. Pakuwon Group" className={inputSm} /></Field>
+        {client && canDelete && (
+          confirmDelete ? (
+            <div className="flex flex-col gap-2 rounded-lg bg-danger-bg p-3 text-sm">
+              <span>Hapus klien <strong>{client.name}</strong>? Hanya bisa kalau belum punya lokasi, user, atau template.</span>
+              <div className="flex gap-2">
+                <button type="button" disabled={busy} onClick={async () => {
+                  if (await save(() => api(`/admin/clients/${client.id}`, { method: "DELETE" }).then(() => true))) onClose();
+                }} className={`${btnSm} bg-danger text-white`}>Ya, hapus</button>
+                <button type="button" onClick={() => setConfirmDelete(false)} className={`${btnSm} border-[1.5px] border-field bg-surface`}>Batal</button>
+              </div>
+            </div>
+          ) : (
+            <button type="button" onClick={() => setConfirmDelete(true)} className="self-start text-sm font-semibold text-danger-ink underline">Hapus klien</button>
+          )
+        )}
         <ErrorNote>{err}</ErrorNote>
         <Actions busy={busy} onClose={onClose} />
       </form>
