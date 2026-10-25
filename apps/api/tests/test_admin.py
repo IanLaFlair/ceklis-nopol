@@ -196,3 +196,19 @@ def test_pdf_per_transaksi(world):
     r = ops.get(f"/api/admin/reports/transactions/{tx['id']}.pdf")
     assert r.status_code == 200 and r.content.startswith(b"%PDF")
     assert ops.get(f"/api/admin/reports/transactions/{world.tsm_lobby.id + 9999}.pdf").status_code == 404
+
+
+def test_laporan_per_petugas(world):
+    login_petugas(world.budi).post("/api/transactions", json=checkin_payload(world))
+    ops = login_admin("ops@x.id", "rahasia-ops")
+    import io
+
+    from openpyxl import load_workbook
+    semua = load_workbook(io.BytesIO(ops.get("/api/admin/reports/transactions.xlsx").content))
+    assert semua["Transaksi"].max_row == 2
+    assert semua["Rekap per petugas"]["A2"].value == world.budi.name
+    budi = ops.get(f"/api/admin/reports/transactions.xlsx?user={world.budi.id}")
+    assert load_workbook(io.BytesIO(budi.content))["Transaksi"].max_row == 2
+    rina = load_workbook(io.BytesIO(ops.get(f"/api/admin/reports/transactions.xlsx?user={world.rina.id}").content))
+    assert rina["Transaksi"].max_row == 1  # hanya judul
+    assert ops.get(f"/api/admin/reports/summary.pdf?user={world.budi.id}").content.startswith(b"%PDF")

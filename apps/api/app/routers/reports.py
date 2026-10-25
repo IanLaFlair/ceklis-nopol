@@ -1,6 +1,7 @@
 """Laporan: rekap transaksi & durasi parkir — Excel, CSV & PDF (PRD §5 /admin/laporan)."""
 import csv
 import io
+import re
 from datetime import date, timedelta
 from typing import Annotated
 
@@ -14,13 +15,13 @@ from reportlab.lib.pagesizes import A4, landscape
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.units import mm
 from reportlab.platypus import Image, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.orm import selectinload
 
 from app.core.deps import DB, AdminUser
 from app.core.timeutil import day_bounds, today, tz
 from app.core.config import get_settings
-from app.models import Incident, Transaction
+from app.models import Incident, Transaction, User
 from app.services import scope, storage
 from app.services import transactions as tx_svc
 
@@ -35,8 +36,11 @@ INCIDENT_LABEL = {"pending": "Menunggu", "confirmed": "Kerusakan baru", "dismiss
 
 class Period:
     def __init__(self, scope_: str = Query("all", alias="scope"),
-                 date_from: date | None = Query(None, alias="from"), date_to: date | None = Query(None, alias="to")):
+                 date_from: date | None = Query(None, alias="from"), date_to: date | None = Query(None, alias="to"),
+                 user_id: int | None = Query(None, alias="user")):
         self.scope = scope_
+        # Petugas tertentu: transaksi yang dia check in ATAU check out (kosong = semua petugas)
+        self.user_id = user_id
         self.d_from, self.d_to, self.start, self.end = _range(date_from, date_to)
 
 
@@ -53,7 +57,7 @@ def _range(date_from: date | None, date_to: date | None):
     return d_from, d_to, day_bounds(d_from)[0], day_bounds(d_to)[1]
 
 
-def _txs(db, user, scope_, start, end):
+def _txs(db, user, scope_, start, end, user_id: int | None = None):
     ids = scope.resolve_scope(db, user, scope_)
     stmt = (select(Transaction)
             .options(selectinload(Transaction.post), selectinload(Transaction.site),
@@ -64,7 +68,34 @@ def _txs(db, user, scope_, start, end):
             .order_by(Transaction.checkin_at))
     if ids is not None:
         stmt = stmt.where(Transaction.post_id.in_(ids or {-1}))
+    if user_id:
+        stmt = stmt.where(or_(Transaction.checkin_by == user_id, Transaction.checkout_by == user_id))
     return db.scalars(stmt).all()
+
+
+def _per_user(txs) -> list[tuple[str, int, int]]:
+    """(nama petugas, jumlah check in, jumlah check out) dalam daftar transaksi."""
+    counts: dict[int, list] = {}
+    for t in txs:
+        counts.setdefault(t.checkin_by, [t.checkin_user.name, 0, 0])[1] += 1
+        if t.checkout_user:
+            counts.setdefault(t.checkout_by, [t.checkout_user.name, 0, 0])[2] += 1
+    return sorted((tuple(v) for v in counts.values()), key=lambda r: (-r[1] - r[2], r[0]))
+
+
+def _filter_user(db, user, p) -> User | None:
+    """Petugas yang dipilih di filter; harus milik klien yang sama (kecuali super admin)."""
+    if not p.user_id:
+        return None
+    u = db.get(User, p.user_id)
+    if not u or (user.role != "super_admin" and u.client_id != user.client_id):
+        raise HTTPException(404, "Petugas tidak ditemukan")
+    return u
+
+
+def _user_suffix(db, user, p) -> str:
+    u = _filter_user(db, user, p)
+    return "-" + re.sub(r"[^a-z0-9]+", "-", u.name.lower()).strip("-") if u else ""
 
 
 def _fmt(dt) -> str:
@@ -104,12 +135,12 @@ def _tx_row(tx) -> list:
 @router.get("/transactions.csv")
 def transactions_csv(user: AdminUser, db: DB, p: PeriodQ):
     rows = []
-    for tx in _txs(db, user, p.scope, p.start, p.end):
+    for tx in _txs(db, user, p.scope, p.start, p.end, p.user_id):
         r = _tx_row(tx)
         r[3], r[5] = _fmt(tx.checkin_at), _fmt(tx.checkout_at)
         r[7] = "" if r[7] is None else r[7]
         rows.append(r)
-    return _csv(f"ceklis-transaksi-{p.d_from}-{p.d_to}.csv", TX_HEADER, rows)
+    return _csv(f"ceklis-transaksi{_user_suffix(db, user, p)}-{p.d_from}-{p.d_to}.csv", TX_HEADER, rows)
 
 
 def _sheet(ws, header: list[str], rows: list[list], widths: list[int]) -> None:
@@ -134,7 +165,7 @@ def _sheet(ws, header: list[str], rows: list[list], widths: list[int]) -> None:
 
 @router.get("/transactions.xlsx")
 def transactions_xlsx(user: AdminUser, db: DB, p: PeriodQ):
-    txs = _txs(db, user, p.scope, p.start, p.end)
+    txs = _txs(db, user, p.scope, p.start, p.end, p.user_id)
     wb = Workbook()
     ws = wb.active
     ws.title = "Transaksi"
@@ -143,11 +174,13 @@ def transactions_xlsx(user: AdminUser, db: DB, p: PeriodQ):
     rekap = wb.create_sheet("Rekap per pos")
     _sheet(rekap, ["Lokasi", "Pos", "Check in", "Selesai", "Masih parkir", "Rata-rata durasi (menit)"],
            [[site, post, n, done, n - done, avg] for site, post, n, done, avg in _per_post(txs)], [24, 18, 10, 10, 13, 22])
+    _sheet(wb.create_sheet("Rekap per petugas"), ["Petugas", "Check in", "Check out"],
+           [list(r) for r in _per_user(txs)], [26, 12, 12])
 
     buf = io.BytesIO()
     wb.save(buf)
     return Response(buf.getvalue(), media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                    headers={"Content-Disposition": f'attachment; filename="ceklis-transaksi-{p.d_from}-{p.d_to}.xlsx"'})
+                    headers={"Content-Disposition": f'attachment; filename="ceklis-transaksi{_user_suffix(db, user, p)}-{p.d_from}-{p.d_to}.xlsx"'})
 
 
 def _per_post(txs) -> list[tuple[str, str, int, int, int | None]]:
@@ -204,7 +237,7 @@ def _dur(m: int | None) -> str:
 def summary_pdf(user: AdminUser, db: DB, p: PeriodQ):
     """Laporan PDF: ringkasan + rekap per pos + rincian setiap transaksi."""
     d_from, d_to = p.d_from, p.d_to
-    txs = _txs(db, user, p.scope, p.start, p.end)
+    txs = _txs(db, user, p.scope, p.start, p.end, p.user_id)
     durations = [m for m in (_minutes(t) for t in txs) if m is not None]
 
     styles = getSampleStyleSheet()
@@ -231,7 +264,9 @@ def summary_pdf(user: AdminUser, db: DB, p: PeriodQ):
 
     story = [
         Paragraph("<b>ceklis</b> — Laporan transaksi", styles["Title"]),
-        Paragraph(f"Periode {d_from:%d %b %Y} – {d_to:%d %b %Y}", styles["Normal"]),
+        Paragraph(f"Periode {d_from:%d %b %Y} – {d_to:%d %b %Y}"
+                  + (f" · Petugas: {u.name}" if (u := _filter_user(db, user, p)) else " · Semua petugas"),
+                  styles["Normal"]),
         Spacer(1, 5 * mm),
     ]
     kpi = Table([
@@ -250,6 +285,10 @@ def summary_pdf(user: AdminUser, db: DB, p: PeriodQ):
     loc_rows += [[site, post, n, done, n - done, _dur(avg)] for site, post, n, done, avg in _per_post(txs)]
     story.append(table(loc_rows, [70 * mm, 45 * mm, 25 * mm, 25 * mm, 28 * mm, 35 * mm]))
 
+    story += [Spacer(1, 5 * mm), Paragraph("<b>Per petugas</b>", styles["Heading3"])]
+    story.append(table([["Petugas", "Check in", "Check out"]] + [list(r) for r in _per_user(txs)] if txs else
+                       [["Petugas", "Check in", "Check out"], ["-", 0, 0]], [70 * mm, 30 * mm, 30 * mm]))
+
     story += [Spacer(1, 6 * mm), Paragraph(f"<b>Rincian transaksi</b> ({len(txs)})", styles["Heading3"])]
     rows = [["No", "Nomor polisi", "Lokasi · Pos", "Masuk", "Keluar", "Durasi", "Status",
              "Kondisi (selain mulus)", "Barang di dalam"]]
@@ -266,7 +305,7 @@ def summary_pdf(user: AdminUser, db: DB, p: PeriodQ):
 
     doc.build(story)
     return Response(buf.getvalue(), media_type="application/pdf",
-                    headers={"Content-Disposition": f'attachment; filename="ceklis-laporan-{d_from}-{d_to}.pdf"'})
+                    headers={"Content-Disposition": f'attachment; filename="ceklis-laporan{_user_suffix(db, user, p)}-{d_from}-{d_to}.pdf"'})
 
 
 SIDE_NAME = {"depan": "Depan", "belakang": "Belakang", "kiri": "Kiri", "kanan": "Kanan"}

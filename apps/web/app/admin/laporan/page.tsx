@@ -5,7 +5,7 @@ import { useState } from "react";
 import useSWR from "swr";
 import { fetcher } from "@/lib/api/client";
 import { useScope } from "@/lib/admin/scope";
-import type { Stats } from "@/lib/admin/types";
+import type { AdminUserRow, Stats } from "@/lib/admin/types";
 import { duration } from "@/lib/format";
 import { PageHead, btnSm, card, h2, inputSm } from "@/components/admin/shell";
 import { ScopePicker } from "@/components/admin/scope-picker";
@@ -23,18 +23,21 @@ export default function LaporanPage() {
   const today = new Date();
   const [from, setFrom] = useState(iso(new Date(today.getTime() - 6 * 86400000)));
   const [to, setTo] = useState(iso(today));
-  const qs = new URLSearchParams({ scope, from, to }).toString();
+  const [userId, setUserId] = useState("");
+  const { data: users } = useSWR<AdminUserRow[]>("/admin/users", fetcher);
+  const staff = (users ?? []).filter((u) => u.role === "petugas" || u.role === "supervisor");
+  const qs = new URLSearchParams({ scope, from, to, ...(userId ? { user: userId } : {}) }).toString();
   const { data: tx, error } = useSWR<{ counts: Record<string, number> }>(
     `/admin/transactions?scope=${encodeURIComponent(scope)}&limit=1`, fetcher);
   const { data: stats } = useSWR<Stats>(`/admin/stats?scope=${encodeURIComponent(scope)}`, fetcher);
   const invalid = from > to;
 
   const downloads = [
-    { href: `${BASE}/admin/reports/transactions.xlsx?${qs}`, label: "Transaksi (Excel)", sub: "Semua check in dalam periode: plat, lokasi, petugas masuk/keluar, durasi, status, kondisi, barang. Plus sheet rekap per pos." },
+    { href: `${BASE}/admin/reports/transactions.xlsx?${qs}`, label: "Transaksi (Excel)", sub: "Semua check in dalam periode: plat, lokasi, petugas masuk/keluar, durasi, status, kondisi, barang. Plus sheet rekap per pos dan per petugas." },
     ...(INCIDENTS_ENABLED
       ? [{ href: `${BASE}/admin/reports/incidents.csv?${qs}`, label: "Insiden (CSV)", sub: "Insiden, bagian, catatan petugas, keputusan supervisor." }]
       : []),
-    { href: `${BASE}/admin/reports/summary.pdf?${qs}`, label: "Laporan (PDF)", sub: "Ringkasan, rekap per pos, dan rincian setiap transaksi dalam periode." },
+    { href: `${BASE}/admin/reports/summary.pdf?${qs}`, label: "Laporan (PDF)", sub: "Ringkasan, rekap per pos & per petugas, dan rincian setiap transaksi dalam periode." },
   ];
 
   return (
@@ -44,13 +47,21 @@ export default function LaporanPage() {
       </PageHead>
       {error && <ErrorNote>{error.message}</ErrorNote>}
       <section className={`${card} flex flex-col gap-4 p-5`}>
-        <h2 className={h2}>Periode</h2>
+        <h2 className={h2}>Periode & petugas</h2>
         <div className="flex flex-wrap gap-3">
           <label className="flex flex-col gap-1.5 text-sm font-semibold">Dari
             <input type="date" value={from} max={to} onChange={(e) => setFrom(e.target.value)} className={inputSm} />
           </label>
           <label className="flex flex-col gap-1.5 text-sm font-semibold">Sampai
             <input type="date" value={to} min={from} onChange={(e) => setTo(e.target.value)} className={inputSm} />
+          </label>
+          <label className="flex min-w-[220px] flex-col gap-1.5 text-sm font-semibold">Petugas
+            <select value={userId} onChange={(e) => setUserId(e.target.value)} className={inputSm}>
+              <option value="">Semua petugas</option>
+              {staff.map((u) => (
+                <option key={u.id} value={u.id}>{u.name}{u.staff_code ? ` · ${u.staff_code}` : ""}{u.active ? "" : " (nonaktif)"}</option>
+              ))}
+            </select>
           </label>
         </div>
         {invalid && <ErrorNote>Tanggal awal setelah tanggal akhir.</ErrorNote>}
