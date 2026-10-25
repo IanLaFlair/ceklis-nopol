@@ -126,3 +126,21 @@ def test_supervisor_per_lokasi_lihat_semua_pos_di_dashboard(world):
     row = next(r for r in ov["staff"] if r["user"]["name"] == "Monica")
     assert row["posts"] == ["Semua pos"]
     assert monica.get(f"/api/admin/sites/{world.other_site.id}/overview").status_code in (403, 404)
+
+
+def test_hapus_template_dan_mulus_selalu_kondisi_normal(world):
+    ops = login_admin("ops@x.id", "rahasia-ops")
+    tpl = ops.post(f"/api/admin/templates/{world.template.id}/duplicate").json()
+    cfg = tpl["config"]
+    # Penyok dicoba dijadikan normal, Mulus dihapus: server mengembalikan Mulus di atas sebagai satu-satunya normal
+    cfg["conditions"] = [{"id": "penyok", "label": "Penyok", "ok": True}, {"id": "retak", "label": "Retak", "ok": True}]
+    saved = ops.put(f"/api/admin/templates/{tpl['id']}", json={"config": cfg}).json()
+    assert [(c["id"], c["ok"]) for c in saved["config"]["conditions"]] == [("mulus", True), ("penyok", False), ("retak", False)]
+
+    # Template yang masih dipakai lokasi tidak bisa dihapus
+    assert ops.delete(f"/api/admin/templates/{world.template.id}").status_code in (403, 409)
+    assert ops.delete(f"/api/admin/templates/{tpl['id']}").status_code == 204
+    assert tpl["id"] not in [t["id"] for t in ops.get("/api/admin/templates").json()]
+    assert ops.get(f"/api/admin/templates/{tpl['id']}").status_code == 404
+    r = ops.patch(f"/api/admin/sites/{world.site.id}", json={"template_id": tpl["id"]})
+    assert r.status_code == 422

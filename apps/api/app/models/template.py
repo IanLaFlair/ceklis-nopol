@@ -12,6 +12,8 @@ class ChecklistTemplate(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     client_id: Mapped[int | None] = mapped_column(ForeignKey("clients.id"))
     name: Mapped[str] = mapped_column(String(120))
+    # Dihapus admin: disembunyikan, tidak dihapus permanen karena transaksi lama menunjuk versinya
+    archived_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
     versions: Mapped[list["TemplateVersion"]] = relationship(
         back_populates="template", order_by="TemplateVersion.version"

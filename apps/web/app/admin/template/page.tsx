@@ -60,11 +60,36 @@ export default function TemplatePage() {
     }
   }
 
+  const current = list?.find((t) => t.id === id);
+  const canDelete = !!current && (me.role === "super_admin" || current.client_id === me.client_id);
+
+  async function remove() {
+    if (!current) return;
+    if (current.used_by.length) {
+      setErr(`Template ini masih dipakai ${current.used_by.length} lokasi. Ganti template lokasi itu dulu di Lokasi & Petugas.`);
+      return;
+    }
+    if (!window.confirm(`Hapus template "${current.name}"? Transaksi lama tetap tersimpan.`)) return;
+    setErr(null);
+    try {
+      await api(`/admin/templates/${current.id}`, { method: "DELETE" });
+      await mutate("/admin/templates");
+      setId(null);
+    } catch (e) {
+      setErr(e instanceof ApiError ? e.message : "Gagal menghapus");
+    }
+  }
+
   return (
     <>
       <PageHead title="Template Checklist" sub="Atur item yang dicek petugas. Satu template bisa dipakai banyak lokasi.">
         {manage && id && (
-          <button onClick={() => create(`/admin/templates/${id}/duplicate`)} className={`${btnSm} border-[1.5px] border-field bg-surface`}>Duplikat</button>
+          <>
+            {canDelete && (
+              <button onClick={remove} className={`${btnSm} border-[1.5px] border-danger bg-surface text-danger-ink`}>Hapus template</button>
+            )}
+            <button onClick={() => create(`/admin/templates/${id}/duplicate`)} className={`${btnSm} border-[1.5px] border-field bg-surface`}>Duplikat</button>
+          </>
         )}
       </PageHead>
       {(error || err) && <ErrorNote>{error?.message ?? err}</ErrorNote>}
@@ -461,22 +486,26 @@ function ConditionsEditor({ conditions, onChange }: { conditions: ConditionOptio
         </div>
       ) : (
         <div className="flex flex-col">
-          {conditions.map((c, i) => (
-            <div key={c.id} className={`flex flex-wrap items-center gap-3 py-2 ${i ? "border-t border-line-2" : ""}`}>
-              <input value={c.label} onChange={(e) => set(i, { label: e.target.value })} aria-label={`Label kondisi ${c.label}`}
-                className="min-h-10 min-w-[140px] flex-1 rounded-lg border border-transparent px-2 text-[15px] outline-none hover:border-line focus:border-ink" />
-              <span className="font-mono text-[11px] text-muted-2">{c.id}</span>
-              <label className="flex min-h-10 items-center gap-2 text-[13px] text-muted">
-                <input type="checkbox" checked={c.ok} onChange={(e) => set(i, { ok: e.target.checked })} className="size-[18px] accent-ink" />
-                Dihitung baik
-              </label>
-              <OrderButtons label={c.label} onUp={() => onChange(move(conditions, i, -1))} onDown={() => onChange(move(conditions, i, 1))} />
-              <button type="button" onClick={() => onChange(conditions.filter((_, x) => x !== i))} disabled={conditions.length <= 2}
-                aria-label={`Hapus ${c.label}`} className="flex size-10 items-center justify-center rounded-lg text-muted hover:bg-paper-2 disabled:opacity-30">
-                <Close size={18} />
-              </button>
-            </div>
-          ))}
+          {conditions.map((c, i) =>
+            c.id === "mulus" ? (
+              // Mulus tetap: satu-satunya kondisi normal, tidak bisa diubah / dihapus
+              <div key={c.id} className="flex flex-wrap items-center gap-3 py-2">
+                <span className="min-h-10 flex-1 px-2 text-[15px] leading-10">{c.label}</span>
+                <span className="rounded-full bg-success-bg px-2.5 py-1 text-xs font-semibold text-success">Kondisi normal</span>
+              </div>
+            ) : (
+              <div key={c.id} className={`flex flex-wrap items-center gap-3 py-2 ${i ? "border-t border-line-2" : ""}`}>
+                <input value={c.label} onChange={(e) => set(i, { label: e.target.value })} aria-label={`Label kondisi ${c.label}`}
+                  className="min-h-10 min-w-[140px] flex-1 rounded-lg border border-transparent px-2 text-[15px] outline-none hover:border-line focus:border-ink" />
+                <span className="rounded-full bg-danger-bg px-2.5 py-1 text-xs font-semibold text-danger-ink">Kerusakan</span>
+                <OrderButtons label={c.label} onUp={() => i > 1 && onChange(move(conditions, i, -1))} onDown={() => onChange(move(conditions, i, 1))} />
+                <button type="button" onClick={() => onChange(conditions.filter((_, x) => x !== i))} disabled={conditions.length <= 2}
+                  aria-label={`Hapus ${c.label}`} className="flex size-10 items-center justify-center rounded-lg text-muted hover:bg-paper-2 disabled:opacity-30">
+                  <Close size={18} />
+                </button>
+              </div>
+            ),
+          )}
         </div>
       )}
       {conditions.length > 0 && (
@@ -486,8 +515,8 @@ function ConditionsEditor({ conditions, onChange }: { conditions: ConditionOptio
           <button type="button" onClick={add} className={btnSm}>Tambah</button>
         </div>
       )}
-      {conditions.length > 0 && !conditions.some((c) => c.ok) && (
-        <p className="text-xs text-danger-ink">Minimal satu kondisi harus “dihitung baik”.</p>
+      {conditions.length > 0 && (
+        <p className="text-xs text-muted">Mulus selalu jadi kondisi normal. Kondisi lain dihitung kerusakan: ditandai di admin, laporan, dan diingatkan saat check out.</p>
       )}
     </section>
   );

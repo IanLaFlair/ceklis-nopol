@@ -137,7 +137,7 @@ def _check_template(db, user, template_id: int | None) -> None:
     if template_id is None:
         return
     tpl = db.get(ChecklistTemplate, template_id)
-    if not tpl:
+    if not tpl or tpl.archived_at:
         raise HTTPException(422, "Template tidak ditemukan")
     if tpl.client_id is not None:
         _own_client(user, tpl.client_id)

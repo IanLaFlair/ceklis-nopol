@@ -26,14 +26,16 @@ class TemplateGroup(BaseModel):
 
 
 class ConditionOption(BaseModel):
-    """Pilihan kondisi per bagian luar, mis. Mulus / Penyok / Lecet. `ok` = dihitung baik."""
+    """Pilihan kondisi per bagian luar, mis. Mulus / Penyok / Lecet. `ok` = bukan kerusakan (hanya Mulus)."""
     id: str = Field(pattern=r"^[a-z0-9_]{1,32}$")
     label: str = Field(min_length=1, max_length=40)
     ok: bool = False
 
 
+NORMAL_CONDITION = ConditionOption(id="mulus", label="Mulus", ok=True)
+
 DEFAULT_CONDITIONS = [
-    ConditionOption(id="mulus", label="Mulus", ok=True),
+    NORMAL_CONDITION,
     ConditionOption(id="penyok", label="Penyok"),
     ConditionOption(id="lecet", label="Lecet"),
 ]
@@ -64,8 +66,10 @@ class TemplateConfig(BaseModel):
         cond_ids = [c.id for c in self.conditions]
         if len(cond_ids) != len(set(cond_ids)):
             raise ValueError("id kondisi duplikat")
-        if self.conditions and not any(c.ok for c in self.conditions):
-            raise ValueError("minimal satu kondisi harus dihitung baik (mis. Mulus)")
+        if self.conditions:
+            # Mulus selalu ada, paling atas, dan satu-satunya kondisi normal; kondisi lain = kerusakan
+            others = [c.model_copy(update={"ok": False}) for c in self.conditions if c.id != NORMAL_CONDITION.id]
+            self.conditions = [NORMAL_CONDITION.model_copy(), *others]
         exterior = {it.id for it in self.exterior_items()}
         for line in self.summary_lines:
             missing = [i for i in line.item_ids if i not in exterior]

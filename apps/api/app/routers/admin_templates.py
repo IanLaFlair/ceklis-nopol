@@ -5,6 +5,7 @@ from sqlalchemy import or_, select
 from sqlalchemy.orm import selectinload
 
 from app.core.deps import DB, AdminUser, ManagerUser, device_of
+from app.core.timeutil import now
 from app.models import ChecklistTemplate, Site, TemplateVersion
 from app.services import activity
 from app.services.template_config import STANDAR_MOBIL, TemplateConfig
@@ -14,8 +15,8 @@ router = APIRouter(prefix="/admin/templates", tags=["admin-templates"])
 
 def _visible(user):
     if user.role == "super_admin":
-        return True
-    return or_(ChecklistTemplate.client_id.is_(None), ChecklistTemplate.client_id == user.client_id)
+        return ChecklistTemplate.archived_at.is_(None)
+    return ChecklistTemplate.archived_at.is_(None) & or_(ChecklistTemplate.client_id.is_(None), ChecklistTemplate.client_id == user.client_id)
 
 
 def _get(db, user, template_id: int, write: bool = False) -> ChecklistTemplate:
@@ -129,3 +130,15 @@ def duplicate_template(template_id: int, user: ManagerUser, request: Request, db
                  meta={"from": src.id})
     db.commit()
     return _out(db, user, tpl, full=True)
+
+
+@router.delete("/{template_id}", status_code=204)
+def delete_template(template_id: int, user: ManagerUser, request: Request, db: DB):
+    tpl = _get(db, user, template_id, write=True)
+    used = db.scalars(select(Site.name).where(Site.template_id == tpl.id).order_by(Site.name)).all()
+    if used:
+        raise HTTPException(409, f"Template masih dipakai {len(used)} lokasi. Ganti template lokasi itu dulu "
+                                 f"di Lokasi & Petugas.")
+    tpl.archived_at = now()
+    activity.log(db, user, "template_deleted", "template", tpl.id, device=device_of(request), meta={"name": tpl.name})
+    db.commit()
