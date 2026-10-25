@@ -6,7 +6,6 @@ import { api, ApiError, fetcher } from "@/lib/api/client";
 import { useQueryParam } from "@/lib/admin/scope";
 import type { TemplateFull, TemplateRow } from "@/lib/admin/types";
 import { SIDE_LABEL, dateTime } from "@/lib/format";
-import { buildSummary, exteriorItems, insideItems } from "@/lib/summary";
 import type { ConditionOption, PhotoMode, TemplateConfig, TemplateGroup, TemplateItem } from "@/lib/types";
 import { PageHead, btnSm, card, h2, inputSm, useAdmin } from "@/components/admin/shell";
 import { ChevronDown, Close } from "@/components/icons";
@@ -202,14 +201,6 @@ function Editor({ id }: { id: number }) {
     }
   }
 
-  const exterior = exteriorItems(cfg);
-  const preview = buildSummary(
-    cfg, "B 1234 ABC",
-    Object.fromEntries(exterior.map((i, n) => [i.id, n !== 2])),
-    Object.fromEntries(insideItems(cfg).slice(0, 1).map((i) => [i.id, { present: true }])),
-    "",
-  );
-
   return (
     <div className="flex flex-col gap-3.5">
       <div className={`${card} flex flex-wrap items-end gap-3 p-[18px]`}>
@@ -348,33 +339,6 @@ function Editor({ id }: { id: number }) {
           </div>
         )}
 
-        <section className={`${card} flex flex-col gap-3 p-5`}>
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <h2 className={h2}>Pemetaan ringkasan</h2>
-            <span className="text-[13px] text-muted">Format teks yang dikirim ke pemilik</span>
-          </div>
-          <label className="flex flex-col gap-1.5 text-sm font-semibold sm:max-w-[320px]">
-            Judul ringkasan
-            <input value={cfg.summary_title} onChange={(e) => update((c) => ({ ...c, summary_title: e.target.value }))} className={inputSm} />
-          </label>
-          {cfg.summary_lines.map((l, li) => (
-            <SummaryLineRow key={li} label={l.label} ids={l.item_ids} items={exterior}
-              onLabel={(v) => update((c) => ({ ...c, summary_lines: c.summary_lines.map((x, n) => (n === li ? { ...x, label: v } : x)) }))}
-              onIds={(ids) => update((c) => ({ ...c, summary_lines: c.summary_lines.map((x, n) => (n === li ? { ...x, item_ids: ids } : x)) }))}
-              onUp={() => update((c) => ({ ...c, summary_lines: move(c.summary_lines, li, -1) }))}
-              onDown={() => update((c) => ({ ...c, summary_lines: move(c.summary_lines, li, 1) }))}
-              onRemove={() => update((c) => ({ ...c, summary_lines: c.summary_lines.filter((_, n) => n !== li) }))} />
-          ))}
-          {!readOnly && (
-            <button type="button" disabled={!exterior.length}
-              onClick={() => update((c) => ({ ...c, summary_lines: [...c.summary_lines, { label: "Baris baru", item_ids: [exterior[0].id] }] }))}
-              className={`${btnSm} self-start border-[1.5px] border-dashed border-[#9A9F99]`}>+ Baris ringkasan</button>
-          )}
-          <div className="flex flex-col gap-1.5">
-            <span className="text-xs font-semibold text-muted">Pratinjau (contoh: item ke-3 tidak diceklis)</span>
-            <pre className="overflow-x-auto rounded-xl bg-ink p-3.5 font-mono text-[13px] leading-[1.75] whitespace-pre-wrap text-on-ink">{preview}</pre>
-          </div>
-        </section>
       </fieldset>
 
       <div className="flex flex-wrap gap-3.5">
@@ -416,45 +380,6 @@ function OrderButtons({ onUp, onDown, label }: { onUp: () => void; onDown: () =>
     </span>
   );
 }
-
-function SummaryLineRow({ label, ids, items, onLabel, onIds, onUp, onDown, onRemove }: {
-  label: string;
-  ids: string[];
-  items: { id: string; label: string; group: string }[];
-  onLabel: (v: string) => void;
-  onIds: (ids: string[]) => void;
-  onUp: () => void;
-  onDown: () => void;
-  onRemove: () => void;
-}) {
-  const [open, setOpen] = useState(false);
-  const names = ids.map((i) => items.find((x) => x.id === i)?.label ?? i);
-  return (
-    <div className="flex flex-col gap-2 rounded-xl border border-line p-3">
-      <div className="flex flex-wrap items-center gap-2">
-        <input aria-label="Label baris" value={label} onChange={(e) => onLabel(e.target.value)} className={`${inputSm} min-w-[160px] flex-1`} />
-        <button type="button" onClick={() => setOpen(!open)} aria-expanded={open}
-          className="min-h-11 rounded-[10px] border-[1.5px] border-field px-3 text-left text-sm">
-          ← {names.join(", ") || "pilih item"}
-        </button>
-        <OrderButtons onUp={onUp} onDown={onDown} label={label} />
-        <button type="button" onClick={onRemove} aria-label={`Hapus baris ${label}`} className="flex size-10 items-center justify-center rounded-lg text-lg text-muted-2 hover:bg-paper">×</button>
-      </div>
-      {open && (
-        <div className="grid grid-cols-1 gap-1 sm:grid-cols-2">
-          {items.map((it) => (
-            <label key={it.id} className="flex min-h-10 items-center gap-2 text-sm">
-              <input type="checkbox" checked={ids.includes(it.id)} className="size-[18px] accent-ink"
-                onChange={(e) => onIds(e.target.checked ? [...ids, it.id] : ids.filter((x) => x !== it.id))} />
-              {it.label} <span className="text-xs text-muted-2">{it.group}</span>
-            </label>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
 
 const DEFAULT_CONDITIONS: ConditionOption[] = [
   { id: "mulus", label: "Mulus", ok: true },

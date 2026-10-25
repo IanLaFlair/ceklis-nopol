@@ -130,12 +130,13 @@ export function TxDetailView({ id }: { id: number }) {
       </section>
 
       <div className="flex flex-wrap gap-3.5">
-        <section className={`${card} flex min-w-0 flex-[1_1_280px] flex-col gap-2 p-[18px]`}>
-          <h2 className={h2}>Ringkasan otomatis</h2>
-          <pre className="overflow-x-auto rounded-xl bg-ink p-3.5 font-mono text-[13px] leading-[1.75] whitespace-pre-wrap text-on-ink">{tx.summary_text}</pre>
-          {tx.notes && <p className="text-sm"><strong>Catatan masuk:</strong> {tx.notes}</p>}
-          {tx.checkout_notes && <p className="text-sm"><strong>Catatan keluar:</strong> {tx.checkout_notes}</p>}
-        </section>
+        {(tx.notes || tx.checkout_notes) && (
+          <section className={`${card} flex min-w-0 flex-[1_1_280px] flex-col gap-2 p-[18px]`}>
+            <h2 className={h2}>Catatan</h2>
+            {tx.notes && <p className="text-sm"><strong>Masuk:</strong> {tx.notes}</p>}
+            {tx.checkout_notes && <p className="text-sm"><strong>Keluar:</strong> {tx.checkout_notes}</p>}
+          </section>
+        )}
         <section className={`${card} flex min-w-0 flex-[1_1_260px] flex-col gap-2.5 p-[18px]`}>
           <h2 className={h2}>Riwayat</h2>
           {tx.incidents.map((i) => (
