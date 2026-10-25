@@ -75,3 +75,12 @@ def test_ubah_dan_hapus_klien(world):
     assert ops.delete(f"/api/admin/clients/{c['id']}").status_code == 403
     assert root.delete(f"/api/admin/clients/{c['id']}").status_code == 204
     assert all(x["id"] != c["id"] for x in root.get("/api/admin/clients").json())
+
+
+def test_template_global_hanya_tampilkan_lokasi_klien_sendiri(world):
+    ops = login_admin("ops@x.id", "rahasia-ops")
+    tpl = next(t for t in ops.get("/api/admin/templates").json() if t["id"] == world.template.id)
+    assert world.other_site.name not in [s["name"] for s in tpl["used_by"]]
+    root = login_admin("root@x.id", "rahasia-root")
+    tpl = next(t for t in root.get("/api/admin/templates").json() if t["id"] == world.template.id)
+    assert world.other_site.name in [s["name"] for s in tpl["used_by"]]

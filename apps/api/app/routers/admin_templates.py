@@ -28,9 +28,13 @@ def _get(db, user, template_id: int, write: bool = False) -> ChecklistTemplate:
     return tpl
 
 
-def _out(db, tpl: ChecklistTemplate, full: bool = False) -> dict:
+def _out(db, user, tpl: ChecklistTemplate, full: bool = False) -> dict:
     latest = tpl.latest
-    used = db.scalars(select(Site).where(Site.template_id == tpl.id).order_by(Site.name)).all()
+    stmt = select(Site).where(Site.template_id == tpl.id).order_by(Site.name)
+    if user.role != "super_admin":
+        # Template global dipakai banyak klien; admin klien hanya melihat lokasinya sendiri
+        stmt = stmt.where(Site.client_id == user.client_id)
+    used = db.scalars(stmt).all()
     data = {
         "id": tpl.id, "name": tpl.name, "client_id": tpl.client_id,
         "version": latest.version if latest else None, "version_id": latest.id if latest else None,
@@ -66,12 +70,12 @@ class TemplateSave(BaseModel):
 def list_templates(user: AdminUser, db: DB):
     tpls = db.scalars(select(ChecklistTemplate).options(selectinload(ChecklistTemplate.versions))
                       .where(_visible(user)).order_by(ChecklistTemplate.name)).all()
-    return [_out(db, t) for t in tpls]
+    return [_out(db, user, t) for t in tpls]
 
 
 @router.get("/{template_id}")
 def get_template(template_id: int, user: AdminUser, db: DB):
-    return _out(db, _get(db, user, template_id), full=True)
+    return _out(db, user, _get(db, user, template_id), full=True)
 
 
 @router.get("/{template_id}/versions/{version}")
@@ -93,7 +97,7 @@ def create_template(body: TemplateCreate, user: ManagerUser, request: Request, d
     db.flush()
     activity.log(db, user, "template_created", "template", tpl.id, device=device_of(request))
     db.commit()
-    return _out(db, tpl, full=True)
+    return _out(db, user, tpl, full=True)
 
 
 @router.put("/{template_id}")
@@ -110,7 +114,7 @@ def save_template(template_id: int, body: TemplateSave, user: ManagerUser, reque
     activity.log(db, user, "template_saved", "template", tpl.id, device=device_of(request),
                  meta={"version": tpl.latest.version})
     db.commit()
-    return _out(db, tpl, full=True)
+    return _out(db, user, tpl, full=True)
 
 
 @router.post("/{template_id}/duplicate", status_code=201)
@@ -124,4 +128,4 @@ def duplicate_template(template_id: int, user: ManagerUser, request: Request, db
     activity.log(db, user, "template_created", "template", tpl.id, device=device_of(request),
                  meta={"from": src.id})
     db.commit()
-    return _out(db, tpl, full=True)
+    return _out(db, user, tpl, full=True)
