@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
+import { useCamera } from "@/components/petugas/camera";
 import { compressPhoto } from "@/lib/camera/compress";
 import { clock } from "@/lib/format";
 
@@ -10,25 +11,18 @@ export interface Shot {
   at: Date;
 }
 
-/** Tombol kamera: <input capture="environment"> + kompres di browser. */
+/** Tombol kamera: kamera di dalam aplikasi (selalu kamera belakang) + kompres di browser. */
 export function useCapture(onShot: (shot: Shot) => void) {
-  const ref = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
-  const input = (
-    <input ref={ref} type="file" accept="image/*" capture="environment" className="hidden"
-      onChange={async (e) => {
-        const file = e.target.files?.[0];
-        e.target.value = "";
-        if (!file) return;
-        setBusy(true);
-        try {
-          onShot({ id: crypto.randomUUID(), blob: await compressPhoto(file), at: new Date() });
-        } finally {
-          setBusy(false);
-        }
-      }} />
-  );
-  return { input, open: () => ref.current?.click(), busy };
+  const cam = useCamera(async (file) => {
+    setBusy(true);
+    try {
+      onShot({ id: crypto.randomUUID(), blob: await compressPhoto(file), at: new Date() });
+    } finally {
+      setBusy(false);
+    }
+  });
+  return { input: cam.ui, open: cam.open, busy };
 }
 
 export function useObjectUrl(blob: Blob | null | undefined): string | null {

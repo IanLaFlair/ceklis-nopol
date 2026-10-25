@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useRef, useState } from "react";
+import { useCamera } from "@/components/petugas/camera";
 import { useCapture, Thumb, type Shot } from "@/components/petugas/photo-input";
 import { useSession } from "@/components/petugas/session";
 import { Camera, Check, Close, ScanPlate } from "@/components/icons";
@@ -376,12 +377,6 @@ export default function CheckinPage() {
 }
 
 function useScanInput(onFile: (f: File) => void) {
-  const ref = useRef<HTMLInputElement>(null);
-  return {
-    open: () => ref.current?.click(),
-    input: (
-      <input ref={ref} type="file" accept="image/*" capture="environment" className="hidden"
-        onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ""; if (f) onFile(f); }} />
-    ),
-  };
+  const cam = useCamera(onFile, { guide: "plate", title: "Scan plat" });
+  return { open: cam.open, input: cam.ui };
 }
