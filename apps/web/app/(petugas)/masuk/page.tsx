@@ -72,8 +72,8 @@ function LoginForm() {
           <Pin size={18} className="mt-px shrink-0 text-ink" />
           Lokasi dan pos tugas (mis. Lobby 2) diatur oleh admin. Hubungi supervisor kalau lokasi kamu salah.
         </div>
-        <a href="/admin/login" className="mt-auto text-center text-xs text-muted-2 underline-offset-2 hover:underline">
-          ceklis.nopol-lpr.com · masuk sebagai admin
+        <a href="/admin/login" className="mt-auto flex min-h-12 items-center justify-center rounded-[14px] border-[1.5px] border-ink text-[15px] font-bold text-ink active:bg-ink active:text-on-ink">
+          Masuk sebagai admin / supervisor
         </a>
       </form>
     </div>
