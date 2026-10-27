@@ -61,6 +61,11 @@ export function PetugasSession({ children }: { children: React.ReactNode }) {
         }
         setFromCache(true);
       }
+      // Admin tidak memakai aplikasi petugas: langsung ke dashboard
+      if (me.role === "super_admin" || me.role === "client_admin") {
+        router.replace("/admin");
+        return;
+      }
       setUser(me);
       const key = `assignment:${me.id}`;
       const q = postId ?? storedPost();
@@ -94,6 +99,12 @@ export function PetugasSession({ children }: { children: React.ReactNode }) {
     [load],
   );
 
+  // Supervisor tanpa pos tugas di aplikasi petugas: arahkan ke dashboard
+  const toAdmin = user?.role === "supervisor" && assignment && !assignment.active;
+  useEffect(() => {
+    if (toAdmin) router.replace("/admin");
+  }, [toAdmin, router]);
+
   if (failed) {
     return (
       <div className="flex min-h-dvh items-center justify-center p-6 text-center text-muted">
@@ -101,7 +112,7 @@ export function PetugasSession({ children }: { children: React.ReactNode }) {
       </div>
     );
   }
-  if (!user || !assignment) {
+  if (!user || !assignment || toAdmin) {
     return <div aria-busy="true" className="min-h-dvh bg-paper" />;
   }
   return (
